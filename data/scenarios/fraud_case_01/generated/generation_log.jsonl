@@ -1,0 +1,102 @@
+{"thread": "t_accomplice", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 3: 영어 단어 'alright'"], "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 0, "attempt": 2, "ok": true, "problems": [], "split": 0, "emoji_removed": 2}
+{"thread": "t_accomplice", "beat": 1, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 2, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 3, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 4, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_accomplice", "beat": 5, "attempt": 1, "ok": false, "problems": ["메시지 1: 시스템 표시 사용 #@시스템#삭제#"], "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 5, "attempt": 2, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_accomplice", "beat": 6, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_accomplice", "beat": 7, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_a", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 7: 영어 단어 'mAh'"], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_a", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 6: 알 수 없는 표시 #@사진#", "메시지 8: 알 수 없는 표시 #@사진1#", "메시지 8: 알 수 없는 표시 #@사진2#"], "split": 1, "emoji_removed": 2}
+{"thread": "t_victim_a", "beat": 0, "attempt": 3, "ok": true, "problems": [], "split": 3, "emoji_removed": 3}
+{"thread": "t_victim_a", "beat": 1, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_a", "beat": 2, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_a", "beat": 3, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_victim_a", "beat": 4, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_a", "beat": 5, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_a", "beat": 6, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 2: 통화 기호 사용", "메시지 3: 통화 기호 사용", "메시지 4: 통화 기호 사용", "메시지 6: 형식이 잘못된 '#' 표시", "메시지 6: 통화 기호 사용"], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 2: 통화 기호 사용", "메시지 3: 통화 기호 사용", "메시지 4: 통화 기호 사용", "메시지 5: 통화 기호 사용"], "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_b", "beat": 0, "attempt": 3, "ok": false, "problems": ["메시지 2: 통화 기호 사용", "메시지 3: 통화 기호 사용"], "split": 0, "emoji_removed": 3}
+{"thread": "t_victim_b", "beat": 0, "attempt": 4, "ok": true, "problems": [], "split": 1, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 1, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_victim_b", "beat": 3, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 4, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 0, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_c", "beat": 1, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_victim_c", "beat": 3, "attempt": 1, "ok": false, "problems": ["메시지 3: 형식이 잘못된 '#' 표시"], "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_c", "beat": 3, "attempt": 2, "ok": true, "problems": [], "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_c", "beat": 4, "attempt": 1, "ok": false, "problems": ["메시지 1: 형식이 잘못된 '#' 표시"], "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 4, "attempt": 2, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_friend", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 2: 영어 단어 'thx'"], "split": 0, "emoji_removed": 2}
+{"thread": "t_friend", "beat": 0, "attempt": 2, "ok": true, "problems": [], "split": 0, "emoji_removed": 3}
+{"thread": "t_friend", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_friend", "beat": 2, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_mother", "beat": 0, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_mother", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_mother", "beat": 2, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_buyer_legit", "beat": 0, "attempt": 1, "ok": false, "problems": ["#@금융# 2회 반복 (장면당 1회)"], "split": 0, "emoji_removed": 0}
+{"thread": "t_buyer_legit", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 8: 형식이 잘못된 '#' 표시"], "split": 0, "emoji_removed": 1}
+{"thread": "t_buyer_legit", "beat": 0, "attempt": 3, "ok": false, "problems": ["메시지 3: 영어 단어 'scratches'", "메시지 8: 영어 단어 'thx'", "메시지 9: 형식이 잘못된 '#' 표시"], "split": 0, "emoji_removed": 3}
+{"thread": "t_buyer_legit", "beat": 0, "attempt": 4, "ok": true, "problems": [], "split": 0, "emoji_removed": 2}
+{"thread": "t_buyer_legit", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true}
+{"thread": "t_buyer_legit", "beat": 2, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_buyer_legit", "beat": 3, "attempt": 1, "ok": false, "problems": ["#@번호# 2회 반복 (장면당 1회)"], "split": 0, "emoji_removed": 0}
+{"thread": "t_buyer_legit", "beat": 3, "attempt": 2, "ok": false, "problems": ["#@번호# 2회 반복 (장면당 1회)"], "split": 0, "emoji_removed": 2}
+{"thread": "t_buyer_legit", "beat": 3, "attempt": 3, "ok": true, "problems": [], "split": 0, "emoji_removed": 0}
+{"thread": "t_buyer_legit", "beat": 4, "attempt": 1, "ok": true, "problems": [], "split": 0, "emoji_removed": 1}
+{"thread": "t_accomplice", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 4, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_accomplice", "beat": 5, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 6, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_accomplice", "beat": 7, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 6: 금지어 '입금' 사용"], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_b", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 5: 금지어 '송금' 사용", "#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 0, "emoji_removed": 4}
+{"thread": "t_victim_b", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_b", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_victim_b", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 4, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_c", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_victim_c", "beat": 3, "attempt": 1, "ok": false, "problems": ["메시지 5: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_c", "beat": 3, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_c", "beat": 4, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_friend", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 6: 영어 단어 'thx'"], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_friend", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_friend", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_friend", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 4, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_accomplice", "beat": 5, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_accomplice", "beat": 6, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_accomplice", "beat": 7, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 6: 금지어 '입금' 사용"], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_b", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 5: 금지어 '송금' 사용", "#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 0, "emoji_removed": 4}
+{"thread": "t_victim_b", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_b", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_victim_b", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_b", "beat": 4, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_c", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"thread": "t_victim_c", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_victim_c", "beat": 3, "attempt": 1, "ok": false, "problems": ["메시지 5: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_victim_c", "beat": 3, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_victim_c", "beat": 4, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 1}
+{"thread": "t_friend", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 6: 영어 단어 'thx'"], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_friend", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 2}
+{"thread": "t_friend", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_friend", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
+{"action": "renormalize", "changed": 1}

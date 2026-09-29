@@ -29,6 +29,18 @@ Example:
         $ python -m evidence_trace.ingest.synthetic \\
             data/scenarios/fraud_case_01/scenario.yaml \\
             --fewshot data/processed/aihub_valid_stratified.jsonl
+
+    검수에서 문제가 나온 대화방만 다시 생성해 기존 결과에 합친다::
+
+        $ python -m evidence_trace.ingest.synthetic \\
+            data/scenarios/fraud_case_01/scenario.yaml \\
+            --fewshot data/processed/aihub_valid_stratified.jsonl \\
+            --threads t_accomplice,t_victim_b
+
+    후처리 규칙을 고친 뒤 LLM 없이 기존 결과에만 다시 적용한다::
+
+        $ python -m evidence_trace.ingest.synthetic \\
+            data/scenarios/fraud_case_01/scenario.yaml --renormalize
 """
 
 from __future__ import annotations
@@ -39,11 +51,12 @@ import json
 import random
 import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.request
 from collections import defaultdict
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Protocol
@@ -84,6 +97,20 @@ _LATIN_WORD = re.compile(r"[A-Za-z]{3,}")
 _UNNATURAL_SYMBOLS = re.compile("[₩$€]")
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
 _EMOJI_JOINERS = re.compile("[\uFE0F\u200D]")
+
+_CHOSEONG_COMPAT = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+_JUNGSEONG_COMPAT = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"
+_JONGSEONG_COMPAT = "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"
+_CONJOINING_TO_COMPAT = {
+    **{0x1100 + i: ch for i, ch in enumerate(_CHOSEONG_COMPAT)},
+    **{0x1161 + i: ch for i, ch in enumerate(_JUNGSEONG_COMPAT)},
+    **{0x11A8 + i: ch for i, ch in enumerate(_JONGSEONG_COMPAT)},
+}
+"""dict[int, str]: 한글 조합형 자모(U+1100 블록) → 키보드로 치는 일반 자모(U+3131 블록).
+
+실제 AI Hub 메시지의 자모 표현은 99.98%가 일반 자모다. LLM은 "ᅲᅲ"처럼
+조합형 자모를 섞어 내는 경우가 있어, 그대로 두면 합성 메시지라는 단서가 된다.
+"""
 _SPLIT_POINT = re.compile(r"(?<=[.!?~,])\s+")
 _SPEAKER_LABELS = "ABCDEFGH"
 
@@ -137,8 +164,11 @@ class Beat:
         literal: 지정되면 LLM 없이 이 문자열을 그대로 메시지로 쓴다.
         markers: 반드시 본문에 들어가야 하는 비식별화 표시.
         tags: 증거 분류 태그.
-        avoid: 본문에 쓰면 안 되는 단어. "뻔한 단어 없이 돌려 말하기" 같은
-            조건을 LLM에게 부탁만 하지 않고 검사기가 강제하게 한다.
+        avoid: 본문에 쓰면 안 되는 단어나 표시. "뻔한 단어 없이 돌려 말하기"
+            같은 조건을 LLM에게 부탁만 하지 않고 검사기가 강제하게 한다. chat
+            장면에는 같은 대화방의 증거 장면이 쓰는 표시가 자동으로 추가된다.
+        opener: chat 장면의 첫 발화자 인물 ID. 지정하면 검사기가 첫 메시지의
+            발화자를 확인해 역할이 뒤바뀐 대화를 반려한다.
     """
 
     index: int
@@ -152,6 +182,7 @@ class Beat:
     markers: tuple[str, ...] = ()
     tags: tuple[str, ...] = ()
     avoid: tuple[str, ...] = ()
+    opener: str | None = None
 
 
 @dataclass(frozen=True)
@@ -330,6 +361,11 @@ def load_scenario(path: Path) -> Scenario:
     * 대화방의 ``roles``는 모든 참여자를 다뤄야 하고 역할 이름이 겹치면
       안 된다. ``roles``가 없으면 연락처 이름(소유자는 "소유자")을 역할
       이름으로 쓴다.
+    * chat의 ``opener``는 그 장면의 발화자여야 한다.
+
+    또한 같은 대화방의 say 장면이 쓰는 표시(예: ``#@금융#``)를 그 대화방
+    chat 장면의 ``avoid``에 자동으로 추가한다. 핵심 사실이 정답으로 표시되지
+    않은 맥락 대화에 먼저 나오면 정답지가 불완전해지기 때문이다.
 
     기기 소유자는 ``owner`` 키로 지정한다. 없으면 ``contact_name``이
     비어 있는 유일한 인물을 소유자로 본다.
@@ -430,6 +466,9 @@ def load_scenario(path: Path) -> Scenario:
             outsiders = [s for s in speakers if s not in participants]
             if outsiders:
                 raise ScenarioError(f"{where}: 대화방 참여자가 아닌 발화자 {outsiders}")
+            opener = raw.get("opener")
+            if opener is not None and (beat_type != "chat" or opener not in speakers):
+                raise ScenarioError(f"{where}: opener는 chat 장면의 발화자여야 합니다")
 
             beats.append(
                 Beat(
@@ -444,8 +483,17 @@ def load_scenario(path: Path) -> Scenario:
                     markers=tuple(raw.get("markers", ())),
                     tags=tuple(raw.get("tags", ())),
                     avoid=tuple(raw.get("avoid", ())),
+                    opener=opener,
                 )
             )
+
+        evidence_markers = tuple(dict.fromkeys(m for b in beats if b.type == "say" for m in b.markers))
+        if evidence_markers:
+            beats = [
+                replace(b, avoid=tuple(dict.fromkeys(b.avoid + evidence_markers)))
+                if b.type == "chat" else b
+                for b in beats
+            ]
 
         threads.append(
             Thread(
@@ -733,6 +781,8 @@ def build_user_prompt(
             task += f"\n반드시 포함할 표시(한 번만): {', '.join(beat.markers)}"
     else:
         task = f"다음 흐름의 대화를 메시지 {count}로 써라. 말하는 사람: {speakers}\n흐름: {beat.text}"
+        if beat.opener:
+            task += f"\n첫 메시지는 {thread.label_of(beat.opener)}가 보낸다."
     if beat.avoid:
         task += f"\n절대 쓰면 안 되는 단어: {', '.join(beat.avoid)}"
     background = "평범한 일상 대화다." if thread.decoy else scenario.summary
@@ -783,11 +833,34 @@ def split_long_text(text: str, limit: int = MAX_MESSAGE_CHARS) -> list[str]:
     return pieces
 
 
+def normalize_jamo(text: str) -> str:
+    """홀로 쓰인 조합형 자모를 일반 자모로 바꾼다.
+
+    먼저 NFC로 정규화해 음절을 이루는 자모는 완성형 글자로 합친 뒤, 남은
+    조합형 자모만 바꾼다. 따라서 완성형 음절은 영향을 받지 않는다.
+
+    Args:
+        text: 원래 문자열.
+
+    Returns:
+        조합형 자모가 일반 자모로 바뀐 NFC 문자열.
+
+    Example:
+        >>> normalize_jamo("다시 보지 말자 \u1172\u1172") == "다시 보지 말자 ㅠㅠ"
+        True
+        >>> normalize_jamo("휴 ㅋㅋ")
+        '휴 ㅋㅋ'
+    """
+    composed = unicodedata.normalize("NFC", text)
+    return composed.translate(_CONJOINING_TO_COMPAT)
+
+
 def normalize_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, str]], dict[str, int]]:
     """LLM 출력을 실제 메신저 말투에 맞게 결정적으로 정리한다.
 
-    이모지와 이모지 결합 문자를 지우고, 공백을 정리한 뒤, 40자를 넘는
-    메시지는 :func:`split_long_text`로 쪼개 같은 발화자의 연속 메시지로 만든다.
+    조합형 자모를 일반 자모로 바꾸고(:func:`normalize_jamo`), 이모지와 이모지
+    결합 문자를 지우고, 공백을 정리한 뒤, 40자를 넘는 메시지는
+    :func:`split_long_text`로 쪼개 같은 발화자의 연속 메시지로 만든다.
     이모지를 지운 뒤 비어 버린 메시지는 버린다.
 
     Args:
@@ -795,17 +868,20 @@ def normalize_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, s
 
     Returns:
         정리된 메시지 목록과 ``{"split": 쪼갠 메시지 수, "emoji_removed": 이모지를
-        지운 메시지 수}`` 통계.
+        지운 메시지 수, "jamo_fixed": 자모를 고친 메시지 수}`` 통계.
 
     Example:
         >>> out, stats = normalize_messages([{"speaker": "A", "text": "좋아요😊"}])
         >>> out, stats
-        ([{'speaker': 'A', 'text': '좋아요'}], {'split': 0, 'emoji_removed': 1})
+        ([{'speaker': 'A', 'text': '좋아요'}], {'split': 0, 'emoji_removed': 1, 'jamo_fixed': 0})
     """
-    stats = {"split": 0, "emoji_removed": 0}
+    stats = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0}
     result: list[dict[str, str]] = []
     for message in messages:
-        text = str(message.get("text", ""))
+        original = str(message.get("text", ""))
+        text = normalize_jamo(original)
+        if text != unicodedata.normalize("NFC", original):
+            stats["jamo_fixed"] += 1
         cleaned = _EMOJI_JOINERS.sub("", _EMOJI.sub("", text))
         if cleaned != text:
             stats["emoji_removed"] += 1
@@ -831,6 +907,7 @@ def validate_messages(
     fewshot_lines: set[str],
     check_count: bool = True,
     forbidden_names: frozenset[str] = frozenset(),
+    opener_label: str | None = None,
 ) -> list[str]:
     """메시지들이 규칙을 지켰는지 검사한다.
 
@@ -843,6 +920,7 @@ def validate_messages(
             후처리로 쪼갠 뒤에는 개수가 늘어나므로, 개수 검사는 LLM 원본에
             대해서만 하고 후처리 결과에는 False로 부른다.
         forbidden_names: 본문에 나오면 안 되는 인물 이름.
+        opener_label: 첫 메시지를 보내야 하는 역할 이름. None이면 검사하지 않는다.
 
     Returns:
         위반 사유 목록. 비어 있으면 합격이다.
@@ -858,6 +936,8 @@ def validate_messages(
     low, high = beat.message_range
     if check_count and not low <= len(messages) <= high:
         problems.append(f"메시지 수 {len(messages)}개 (허용 {low}~{high})")
+    if opener_label and messages and messages[0].get("speaker") != opener_label:
+        problems.append(f"첫 발화자 {messages[0].get('speaker')!r} (지정: {opener_label!r})")
 
     emoji_messages = 0
     for number, message in enumerate(messages, start=1):
@@ -889,7 +969,7 @@ def validate_messages(
             if name in bare:
                 problems.append(f"{where}: 가려야 할 이름 노출 {name!r}")
         for word in beat.avoid:
-            if word in bare:
+            if word in text:
                 problems.append(f"{where}: 금지어 {word!r} 사용")
         if len(text) >= 6 and text in fewshot_lines:
             problems.append(f"{where}: 예시 문장을 그대로 베낌")
@@ -979,14 +1059,12 @@ class GenerationResult:
 
     Attributes:
         records: 합성 증거 레코드 (시각 순).
-        answers: 정답지. ``evidence``와 ``decoys`` 키를 가진다.
-        review_lines: 검수용 대화록 줄들.
+        answers: 정답지. ``evidence``, ``decoys``, ``generation`` 키를 가진다.
         log: 생성 시도 기록.
     """
 
     records: list[EvidenceRecord]
     answers: dict[str, Any]
-    review_lines: list[str]
     log: list[dict[str, Any]]
 
 
@@ -1007,6 +1085,19 @@ def _beat_seed(base: int, scenario_id: str, thread_id: str, index: int, attempt:
     return int(hashlib.sha256(key).hexdigest()[:8], 16) % (2**31)
 
 
+def _thread_key(scenario: Scenario, thread: Thread) -> str:
+    """대화방의 레코드 ``thread_id``를 만든다.
+
+    Args:
+        scenario: 시나리오.
+        thread: 대화방.
+
+    Returns:
+        ``"synthetic:<시나리오>:<대화방>"`` 형식 문자열.
+    """
+    return f"{DATASET_NAME}:{scenario.id}:{thread.id}"
+
+
 def generate(
     scenario: Scenario,
     model: ChatModel,
@@ -1015,11 +1106,14 @@ def generate(
     max_attempts: int = 4,
     examples_per_prompt: int = 4,
     progress: Callable[[str], None] | None = None,
+    only_threads: set[str] | None = None,
 ) -> GenerationResult:
-    """시나리오의 모든 합성 대화방을 생성한다.
+    """시나리오의 합성 대화방을 생성한다.
 
-    장면마다 LLM 원본의 메시지 수를 먼저 검사하고, :func:`normalize_messages`로
-    후처리한 뒤 나머지 규칙을 검사한다.
+    대화방마다 독립된 난수 생성기를 쓰므로, 일부 대화방만 다시 생성해도
+    나머지 대화방의 결과는 영향을 받지 않는다. 장면마다 LLM 원본의 메시지
+    수를 먼저 검사하고, :func:`normalize_messages`로 후처리한 뒤 나머지
+    규칙을 검사한다.
 
     Args:
         scenario: 생성할 시나리오.
@@ -1029,32 +1123,38 @@ def generate(
         max_attempts: 장면 하나당 최대 생성 시도 횟수.
         examples_per_prompt: 프롬프트마다 보여줄 예시 대화 수.
         progress: 진행 상황 문자열을 받을 함수. None이면 출력하지 않는다.
+        only_threads: 생성할 대화방 ID. None이면 전부 생성한다.
 
     Returns:
-        레코드, 정답지, 검수용 대화록, 시도 기록.
+        생성한 대화방의 레코드, 정답지, 시도 기록.
 
     Raises:
+        ScenarioError: ``only_threads``에 시나리오에 없는 대화방이 있는 경우.
         GenerationError: 어떤 장면이 ``max_attempts`` 안에 검사를 통과하지 못한 경우.
             마지막 시도의 위반 사유가 메시지에 담긴다.
     """
-    rng = random.Random(seed)
+    known = {t.id for t in scenario.threads}
+    if only_threads is not None and not only_threads <= known:
+        raise ScenarioError(f"시나리오에 없는 대화방: {sorted(only_threads - known)}")
+    threads = [t for t in scenario.threads if only_threads is None or t.id in only_threads]
+
     report = progress or (lambda _message: None)
-    total_beats = sum(len(t.beats) for t in scenario.threads)
+    total_beats = sum(len(t.beats) for t in threads)
     forbidden = scenario.forbidden_names()
     done = 0
     records: list[EvidenceRecord] = []
     evidence: dict[str, Any] = {}
     decoys: dict[str, list[str]] = {}
-    review: list[str] = [f"# {scenario.title} ({scenario.id}) 검수용 대화록", ""]
+    generation: dict[str, Any] = {}
     log: list[dict[str, Any]] = []
 
-    for thread in scenario.threads:
+    for thread in threads:
+        rng = random.Random(f"{seed}:{scenario.id}:{thread.id}")
         by_label = {thread.label_of(pid): pid for pid in thread.participants}
-        thread_key = f"{DATASET_NAME}:{scenario.id}:{thread.id}"
+        thread_key = _thread_key(scenario, thread)
         history: list[tuple[str, str]] = []
         thread_record_ids: list[str] = []
-        names = ", ".join(scenario.persons[p].contact_name or "기기 소유자" for p in thread.participants)
-        review += [f"## {thread.id}{' (오답 후보)' if thread.decoy else ''} — {names}", ""]
+        generation[thread.id] = {"model": model.name, "seed": seed}
 
         for position, beat in enumerate(thread.beats):
             done += 1
@@ -1064,10 +1164,11 @@ def generate(
             if beat.literal is not None:
                 messages = [{"speaker": thread.label_of(beat.speakers[0]), "text": beat.literal}]
                 log.append({"thread": thread.id, "beat": beat.index, "attempt": 0, "ok": True,
-                            "problems": [], "literal": True})
+                            "problems": [], "literal": True, "seed": seed})
                 report(f"{where}: 고정 문구")
             else:
                 allowed = {thread.label_of(s) for s in beat.speakers}
+                opener_label = thread.label_of(beat.opener) if beat.opener else None
                 schema = build_output_schema(allowed)
                 problems: list[str] = []
                 messages = []
@@ -1080,7 +1181,7 @@ def generate(
                         _beat_seed(seed, scenario.id, thread.id, beat.index, attempt),
                         schema,
                     )
-                    fixes = {"split": 0, "emoji_removed": 0}
+                    fixes = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0}
                     try:
                         raw_messages = _parse_output(raw)
                         low, high = beat.message_range
@@ -1088,14 +1189,14 @@ def generate(
                             messages, fixes = normalize_messages(raw_messages)
                             problems = validate_messages(
                                 messages, beat, allowed, fewshot.lines, check_count=False,
-                                forbidden_names=forbidden,
+                                forbidden_names=forbidden, opener_label=opener_label,
                             )
                         else:
                             problems = [f"메시지 수 {len(raw_messages)}개 (허용 {low}~{high})"]
                     except (ValueError, json.JSONDecodeError) as exc:
                         problems = [f"출력 파싱 실패: {exc}"]
                     log.append({"thread": thread.id, "beat": beat.index, "attempt": attempt,
-                                "ok": not problems, "problems": problems, **fixes})
+                                "ok": not problems, "problems": problems, "seed": seed, **fixes})
                     status = "합격" if not problems else f"반려({problems[0]})"
                     report(f"{where} 시도 {attempt}: {status}")
                     if not problems:
@@ -1133,9 +1234,6 @@ def generate(
                 thread_record_ids.append(record.record_id)
                 beat_ids.append(record.record_id)
                 history.append((message["speaker"], text))
-                who = scenario.persons[sender_id].contact_name or "소유자"
-                mark = f" **[{beat.evidence_id}]**" if beat.evidence_id else ""
-                review.append(f"- `{moment.strftime('%m-%d %H:%M')}` {who}: {text}{mark}")
 
             if beat.evidence_id:
                 evidence[beat.evidence_id] = {
@@ -1144,7 +1242,6 @@ def generate(
                     "must_convey": beat.text,
                     "tags": list(beat.tags),
                 }
-        review.append("")
         if thread.decoy:
             decoys[thread.id] = thread_record_ids
 
@@ -1152,19 +1249,132 @@ def generate(
     answers = {
         "scenario_id": scenario.id,
         "split": scenario.split,
-        "model": model.name,
-        "seed": seed,
         "evidence": evidence,
         "decoys": decoys,
+        "generation": generation,
     }
-    return GenerationResult(records=records, answers=answers, review_lines=review, log=log)
+    return GenerationResult(records=records, answers=answers, log=log)
 
 
-def write_outputs(result: GenerationResult, out_dir: Path) -> None:
+def merge_results(previous: GenerationResult, update: GenerationResult) -> GenerationResult:
+    """이전 생성 결과에서 일부 대화방을 새 결과로 교체한다.
+
+    ``update``에 포함된 대화방의 레코드·증거·오답 후보·생성 정보를 이전
+    결과에서 모두 지우고 새 것으로 바꾼다. 나머지 대화방은 그대로 둔다.
+
+    Args:
+        previous: 기존 결과 (디스크에서 읽은 것).
+        update: 일부 대화방만 새로 생성한 결과.
+
+    Returns:
+        합쳐진 결과. 레코드는 시각 순으로 정렬되고, 시도 기록은 이전 기록 뒤에
+        새 기록이 이어진다.
+    """
+    replaced = set(update.answers["generation"])
+    records = [r for r in previous.records if r.source_ref.get("thread") not in replaced]
+    records += update.records
+    records.sort(key=lambda r: (r.timestamp, r.record_id))
+
+    answers = json.loads(json.dumps(previous.answers))
+    for legacy in ("model", "seed"):  # 대화방별 generation 정보로 옮겨간 옛 키
+        answers.pop(legacy, None)
+    answers["evidence"] = {
+        k: v for k, v in answers.get("evidence", {}).items() if v["thread"] not in replaced
+    }
+    answers["evidence"].update(update.answers["evidence"])
+    answers["decoys"] = {k: v for k, v in answers.get("decoys", {}).items() if k not in replaced}
+    answers["decoys"].update(update.answers["decoys"])
+    answers.setdefault("generation", {}).update(update.answers["generation"])
+    return GenerationResult(records=records, answers=answers, log=previous.log + update.log)
+
+
+def load_results(out_dir: Path) -> GenerationResult:
+    """저장된 생성 결과를 읽는다. 레코드는 무결성 검증을 거친다.
+
+    Args:
+        out_dir: :func:`write_outputs`가 저장한 폴더.
+
+    Returns:
+        읽은 결과.
+
+    Raises:
+        FileNotFoundError: ``records.jsonl``이나 ``answers.json``이 없는 경우.
+        IntegrityError: 저장된 레코드가 변조된 경우.
+    """
+    with (out_dir / "records.jsonl").open(encoding="utf-8") as handle:
+        records = [EvidenceRecord.from_dict(json.loads(line)) for line in handle]
+    answers = json.loads((out_dir / "answers.json").read_text(encoding="utf-8"))
+    log_path = out_dir / "generation_log.jsonl"
+    log = []
+    if log_path.exists():
+        with log_path.open(encoding="utf-8") as handle:
+            log = [json.loads(line) for line in handle]
+    return GenerationResult(records=records, answers=answers, log=log)
+
+
+def renormalize_results(result: GenerationResult) -> tuple[GenerationResult, int]:
+    """이미 만든 결과에 현재의 결정적 후처리(자모 정규화)를 다시 적용한다.
+
+    LLM을 다시 부르지 않으므로 검수를 통과한 문장의 내용은 바뀌지 않는다.
+    레코드 ID는 그대로이고 무결성 해시만 새로 계산되므로 정답지도 유지된다.
+    후처리 규칙을 개선했을 때, 검수가 끝난 결과를 다시 생성하지 않고
+    규칙만 소급 적용하기 위해 쓴다.
+
+    Args:
+        result: 기존 생성 결과.
+
+    Returns:
+        새 결과와 바뀐 레코드 수. 시도 기록 끝에 이번 작업 기록이 추가된다.
+    """
+    records: list[EvidenceRecord] = []
+    changed = 0
+    for record in result.records:
+        text = normalize_jamo(record.content)
+        if text != record.content:
+            record = replace(record, content=text, kind=classify_kind(text))
+            changed += 1
+        records.append(record)
+    log = result.log + [{"action": "renormalize", "changed": changed}]
+    return GenerationResult(records=records, answers=result.answers, log=log), changed
+
+
+def build_review(scenario: Scenario, result: GenerationResult) -> list[str]:
+    """검수용 대화록을 레코드와 정답지로부터 만든다.
+
+    생성 과정이 아니라 저장된 데이터로 만들기 때문에, 일부 대화방만 다시
+    생성한 뒤에도 전체 대화록이 일관되게 나온다.
+
+    Args:
+        scenario: 시나리오. 대화방 순서와 연락처 이름을 쓴다.
+        result: 생성 결과.
+
+    Returns:
+        마크다운 줄 목록.
+    """
+    marks = {rid: eid for eid, e in result.answers["evidence"].items() for rid in e["record_ids"]}
+    by_thread: dict[str, list[EvidenceRecord]] = defaultdict(list)
+    for record in result.records:
+        by_thread[record.source_ref.get("thread", "")].append(record)
+
+    lines = [f"# {scenario.title} ({scenario.id}) 검수용 대화록", ""]
+    for thread in scenario.threads:
+        names = ", ".join(scenario.persons[p].contact_name or "기기 소유자" for p in thread.participants)
+        lines += [f"## {thread.id}{' (오답 후보)' if thread.decoy else ''} — {names}", ""]
+        for record in by_thread.get(thread.id, []):
+            person = record.sender.rsplit(":", 1)[-1]
+            who = scenario.persons[person].contact_name or "소유자"
+            mark = f" **[{marks[record.record_id]}]**" if record.record_id in marks else ""
+            lines.append(f"- `{record.timestamp.strftime('%m-%d %H:%M')}` {who}: {record.content}{mark}")
+        lines.append("")
+    return lines
+
+
+def write_outputs(scenario: Scenario, result: GenerationResult, out_dir: Path) -> None:
     """생성 결과를 파일로 저장한다.
 
     Args:
-        result: :func:`generate`의 결과.
+        scenario: 시나리오. 검수용 대화록을 만들 때 쓴다.
+        result: 저장할 결과.
         out_dir: 저장할 폴더. 없으면 만든다.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1174,7 +1384,7 @@ def write_outputs(result: GenerationResult, out_dir: Path) -> None:
     (out_dir / "answers.json").write_text(
         json.dumps(result.answers, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    (out_dir / "review.md").write_text("\n".join(result.review_lines) + "\n", encoding="utf-8")
+    (out_dir / "review.md").write_text("\n".join(build_review(scenario, result)) + "\n", encoding="utf-8")
     with (out_dir / "generation_log.jsonl").open("w", encoding="utf-8") as handle:
         for entry in result.log:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -1182,6 +1392,9 @@ def write_outputs(result: GenerationResult, out_dir: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     """명령행 진입점. 시나리오를 읽어 합성 대화를 생성하고 저장한다.
+
+    ``--threads``를 주면 지정한 대화방만 다시 생성해 기존 결과에 합친다.
+    검수를 통과한 대화방은 그대로 두고 문제 있는 대화방만 고칠 때 쓴다.
 
     Args:
         argv: 명령행 인자 목록. None이면 ``sys.argv[1:]``을 쓴다.
@@ -1191,33 +1404,59 @@ def main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(description="사건 시나리오 → 합성 증거 대화")
     parser.add_argument("scenario", type=Path, help="scenario.yaml 경로")
-    parser.add_argument("--fewshot", type=Path, required=True, help="말투 예시용 공통 레코드 JSONL")
+    parser.add_argument("--fewshot", type=Path, default=None, help="말투 예시용 공통 레코드 JSONL")
     parser.add_argument("--model", default="exaone3.5:7.8b", help="Ollama 모델 이름")
     parser.add_argument("--seed", type=int, default=20260301, help="기본 시드")
+    parser.add_argument("--max-attempts", type=int, default=6, help="장면당 최대 생성 시도 횟수")
+    parser.add_argument("--threads", default=None,
+                        help="다시 생성할 대화방 ID를 쉼표로 (예: t_victim_b,t_friend)")
     parser.add_argument("--out", type=Path, default=None, help="저장 폴더 (기본: 시나리오 폴더/generated)")
+    parser.add_argument("--renormalize", action="store_true",
+                        help="LLM 없이 기존 결과에 현재 후처리 규칙만 다시 적용")
     args = parser.parse_args(argv)
+    out_dir = args.out or args.scenario.parent / "generated"
+    only = {t.strip() for t in args.threads.split(",") if t.strip()} if args.threads else None
+
+    if args.renormalize:
+        try:
+            scenario = load_scenario(args.scenario)
+            fixed, changed = renormalize_results(load_results(out_dir))
+        except (ScenarioError, FileNotFoundError, ValueError) as exc:
+            print(f"오류: {exc}", file=sys.stderr)
+            return 1
+        write_outputs(scenario, fixed, out_dir)
+        print(f"후처리 재적용: 레코드 {changed}건 수정 → {out_dir}")
+        return 0
+    if args.fewshot is None:
+        print("오류: --fewshot이 필요합니다 (--renormalize가 아닐 때)", file=sys.stderr)
+        return 1
 
     try:
         scenario = load_scenario(args.scenario)
+        previous = load_results(out_dir) if only else None
         pool = FewShotPool.from_jsonl(args.fewshot)
         result = generate(
             scenario, OllamaChatModel(name=args.model), pool, seed=args.seed,
+            max_attempts=args.max_attempts, only_threads=only,
             progress=lambda message: print(message, flush=True),
         )
     except (ScenarioError, GenerationError, FileNotFoundError, ValueError) as exc:
         print(f"오류: {exc}", file=sys.stderr)
         return 1
 
-    out_dir = args.out or args.scenario.parent / "generated"
-    write_outputs(result, out_dir)
     attempts = [e for e in result.log if not e.get("literal")]
     rejected = sum(1 for e in attempts if not e["ok"])
     accepted = [e for e in attempts if e["ok"]]
     split = sum(e.get("split", 0) for e in accepted)
     emoji = sum(e.get("emoji_removed", 0) for e in accepted)
+    jamo = sum(e.get("jamo_fixed", 0) for e in accepted)
+    if previous is not None:
+        result = merge_results(previous, result)
+    write_outputs(scenario, result, out_dir)
+
     print(f"레코드 {len(result.records)}건, 증거 {len(result.answers['evidence'])}개 → {out_dir}")
-    print(f"LLM 시도 {len(attempts)}회 중 검사기 반려 {rejected}회")
-    print(f"합격 출력 후처리: 긴 메시지 분할 {split}건, 이모지 제거 {emoji}건")
+    print(f"이번 실행: LLM 시도 {len(attempts)}회 중 검사기 반려 {rejected}회")
+    print(f"합격 출력 후처리: 긴 메시지 분할 {split}건, 이모지 제거 {emoji}건, 자모 정규화 {jamo}건")
     return 0
 
 

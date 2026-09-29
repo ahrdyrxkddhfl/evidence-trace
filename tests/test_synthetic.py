@@ -19,6 +19,10 @@ from evidence_trace.ingest.synthetic import (
     ScenarioError,
     generate,
     load_scenario,
+    load_results,
+    merge_results,
+    normalize_jamo,
+    renormalize_results,
     normalize_messages,
     split_long_text,
     schedule_times,
@@ -190,9 +194,10 @@ def test_outputs_are_written_and_verifiable(scenario_path: Path, pool: FewShotPo
     """저장한 레코드는 무결성 검증을 통과하고 검수용 대화록에 증거 표시가 있다."""
     from evidence_trace.ingest.records import EvidenceRecord
 
-    result = generate(load_scenario(scenario_path), FakeModel(GOOD), pool)
+    scenario = load_scenario(scenario_path)
+    result = generate(scenario, FakeModel(GOOD), pool)
     out = tmp_path / "generated"
-    write_outputs(result, out)
+    write_outputs(scenario, result, out)
     for line in (out / "records.jsonl").read_text(encoding="utf-8").splitlines():
         EvidenceRecord.from_dict(json.loads(line))
     review = (out / "review.md").read_text(encoding="utf-8")
@@ -297,7 +302,7 @@ def test_normalize_removes_emoji_and_drops_empty() -> None:
         {"speaker": "B", "text": "😊"},
     ])
     assert out == [{"speaker": "A", "text": "네 좋아요"}]
-    assert stats == {"split": 0, "emoji_removed": 2}
+    assert stats == {"split": 0, "emoji_removed": 2, "jamo_fixed": 0}
 
 
 def test_long_emoji_output_is_fixed_not_rejected(scenario_path: Path, pool: FewShotPool) -> None:
@@ -443,3 +448,107 @@ def test_valid_markers_are_not_flagged_as_stray() -> None:
     beat = Beat(0, "chat", datetime(2026, 3, 3, 10, 0, tzinfo=KST), ("a",), "송장", (1, 2))
     text = "#@URL# 여기 #@이모티콘#흑흑# PS5 ok"
     assert validate_messages([{"speaker": "나", "text": text}], beat, {"나"}, set()) == []
+
+
+# ---------- 2차 검수 반영: opener, 맥락 대화의 증거 표시 금지, 대화방 단위 재생성 ----------
+
+def test_opener_mismatch_is_rejected() -> None:
+    """지정한 첫 발화자가 아닌 사람이 먼저 말하면 반려한다."""
+    beat = Beat(0, "chat", datetime(2026, 3, 17, 15, 0, tzinfo=KST), ("suspect", "victim"), "문의", (1, 3),
+                opener="victim")
+    messages = [{"speaker": "판매자", "text": "몇 개나 딸려?"}]
+    problems = validate_messages(messages, beat, {"판매자", "구매자"}, set(), opener_label="구매자")
+    assert any("첫 발화자" in p for p in problems)
+
+
+def test_chat_inherits_evidence_markers_as_avoid(scenario_path: Path) -> None:
+    """같은 대화방 증거 장면이 쓰는 표시는 맥락 대화에서 자동으로 금지된다."""
+    scenario = load_scenario(scenario_path)
+    victim = next(t for t in scenario.threads if t.id == "t_victim")
+    friend = next(t for t in scenario.threads if t.id == "t_friend")
+    assert "#@금융#" in victim.beats[0].avoid
+    assert "#@금융#" not in friend.beats[0].avoid
+
+
+def test_marker_in_avoid_is_detected() -> None:
+    """금지 목록의 표시가 본문에 있으면 반려한다 (표시를 지운 본문이 아니라 원문 기준)."""
+    beat = Beat(0, "chat", datetime(2026, 3, 11, 20, 15, tzinfo=KST), ("suspect",), "흥정", (1, 3),
+                avoid=("#@금융#",))
+    problems = validate_messages([{"speaker": "판매자", "text": "#@금융#로 입금해주세요"}], beat, {"판매자"}, set())
+    assert any("금지어 '#@금융#'" in p for p in problems)
+
+
+def test_opener_must_be_chat_speaker(tmp_path: Path) -> None:
+    """opener가 장면의 발화자가 아니면 시나리오를 거부한다."""
+    path = tmp_path / "bad.yaml"
+    path.write_text(SCENARIO_YAML.replace("messages: 2-3, intent: 물건 문의", "messages: 2-3, opener: friend, intent: 물건 문의"),
+                    encoding="utf-8")
+    with pytest.raises(ScenarioError, match="opener"):
+        load_scenario(path)
+
+
+def test_partial_regeneration_keeps_other_threads(scenario_path: Path, pool: FewShotPool, tmp_path: Path) -> None:
+    """한 대화방만 다시 생성해도 다른 대화방의 레코드와 정답은 그대로다."""
+    scenario = load_scenario(scenario_path)
+    full = generate(scenario, FakeModel(GOOD), pool)
+    out = tmp_path / "generated"
+    write_outputs(scenario, full, out)
+
+    new_friend = _reply(("계산한친구", "반반 ㄱ #@금융#"), ("얻어먹은친구", "ㅇㅋ 바로 보냄"))
+    update = generate(scenario, FakeModel([new_friend]), pool, only_threads={"t_friend"})
+    merged = merge_results(load_results(out), update)
+
+    def by_thread(result, thread):
+        return [(r.record_id, r.content) for r in result.records if r.source_ref["thread"] == thread]
+
+    assert by_thread(merged, "t_victim") == by_thread(full, "t_victim")
+    assert merged.answers["evidence"] == full.answers["evidence"]
+    assert [c for _, c in by_thread(merged, "t_friend")][:2] == ["반반 ㄱ #@금융#", "ㅇㅋ 바로 보냄"]
+    assert set(merged.answers["decoys"]["t_friend"]) == {i for i, _ in by_thread(merged, "t_friend")}
+
+
+def test_unknown_thread_is_rejected(scenario_path: Path, pool: FewShotPool) -> None:
+    """시나리오에 없는 대화방을 다시 생성하라고 하면 거부한다."""
+    with pytest.raises(ScenarioError, match="t_nope"):
+        generate(load_scenario(scenario_path), FakeModel([]), pool, only_threads={"t_nope"})
+
+
+def test_real_scenario_has_openers_and_avoid() -> None:
+    """실제 시나리오의 사기 대화방 첫 대화는 구매자가 시작하고 계좌 표시가 금지된다."""
+    path = Path(__file__).parents[1] / "data/scenarios/fraud_case_01/scenario.yaml"
+    if not path.exists():
+        pytest.skip("시나리오 파일 없음")
+    scenario = load_scenario(path)
+    for thread_id, buyer in (("t_victim_b", "victim_b"), ("t_victim_c", "victim_c")):
+        first = next(t for t in scenario.threads if t.id == thread_id).beats[0]
+        assert first.opener == buyer and "#@금융#" in first.avoid and "입금" in first.avoid
+
+
+# ---------- 자모 정규화 ----------
+
+def test_normalize_jamo_converts_conjoining_jamo() -> None:
+    """홀로 쓰인 조합형 자모(ᅲ)는 일반 자모(ㅠ)로 바뀐다."""
+    assert normalize_jamo("말자 \u1172\u1172 \u110f\u110f") == "말자 ㅠㅠ ㅋㅋ"
+
+
+def test_normalize_jamo_keeps_syllables() -> None:
+    """NFD로 쪼개진 음절도 먼저 합쳐지므로 음절이 자모로 흩어지지 않는다."""
+    import unicodedata
+    assert normalize_jamo(unicodedata.normalize("NFD", "한글 휴대폰")) == "한글 휴대폰"
+
+
+def test_renormalize_keeps_ids_and_answers(scenario_path: Path, pool: FewShotPool) -> None:
+    """후처리 재적용은 내용만 고치고 레코드 ID와 정답지는 그대로 둔다."""
+    reply = _reply(("구매자", "아 \u1172\u1172 있어요?"), ("판매자", "네 있어요"))
+    result = generate(load_scenario(scenario_path), FakeModel([reply, GOOD[1], GOOD[2]]), pool)
+    # 생성 단계에서 이미 정규화되므로, 옛 결과를 흉내 내려고 레코드를 되돌린다
+    from dataclasses import replace
+    old_records = [replace(r, content=r.content.replace("ㅠㅠ", "\u1172\u1172")) for r in result.records]
+    old = type(result)(records=old_records, answers=result.answers, log=result.log)
+
+    fixed, changed = renormalize_results(old)
+    assert changed == 1
+    assert [r.record_id for r in fixed.records] == [r.record_id for r in old.records]
+    assert fixed.answers == old.answers
+    assert "아 ㅠㅠ 있어요?" in [r.content for r in fixed.records]
+    assert all(r.sha256 == r.compute_hash() for r in fixed.records)
