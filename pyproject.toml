@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evidence-trace"
+version = "0.1.0"
+description = "망분리 환경용 로컬 포렌식 조사 보조 AI — 모든 답변을 원본 증거 레코드까지 추적"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ijson>=3.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
