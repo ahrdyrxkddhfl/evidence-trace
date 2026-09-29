@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ijson>=3.2",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
