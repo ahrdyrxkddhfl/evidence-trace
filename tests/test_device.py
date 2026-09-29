@@ -22,8 +22,8 @@ from evidence_trace.ingest.device import (
     check_leaks,
     load_excluded_dialogues,
     main,
+    plan_session_days,
     sample_background,
-    shift_into_period,
     write_device,
 )
 from evidence_trace.ingest.records import Direction, EvidenceRecord, SourceType
@@ -42,13 +42,14 @@ background:
 """
 
 
-def _dialogue(dialogue_id: str, day: str, next_day: str | None = None) -> dict:
+def _dialogue(dialogue_id: str, day: str, next_day: str | None = None, gender: str = "여성") -> dict:
     """원본과 같은 구조의 배경 대화 하나를 만든다.
 
     Args:
         dialogue_id: 대화 ID.
         day: 첫 발화 날짜.
         next_day: 마지막 발화 날짜. None이면 같은 날.
+        gender: 두 참여자의 성별.
 
     Returns:
         AI Hub 대화 JSON.
@@ -56,7 +57,8 @@ def _dialogue(dialogue_id: str, day: str, next_day: str | None = None) -> dict:
     return {
         "header": {
             "dialogueInfo": {"dialogueID": dialogue_id},
-            "participantsInfo": [{"participantID": "P01"}, {"participantID": "P02"}],
+            "participantsInfo": [{"participantID": "P01", "gender": gender, "age": "20대"},
+                                 {"participantID": "P02", "gender": gender, "age": "20대"}],
         },
         "body": [
             {"utteranceID": "U1", "participantID": "P01", "date": day, "time": "21:05:00", "utterance": "ㅋㅋ 뭐해"},
@@ -73,7 +75,8 @@ def aihub_root(tmp_path: Path) -> Path:
     root = tmp_path / "aihub" / "[라벨]한국어SNS_valid"
     root.mkdir(parents=True)
     for topic, prefix in (("상거래(쇼핑)", "shop"), ("시사교육", "news")):
-        dialogues = [_dialogue(f"{prefix}-{i}", "2017-11-11", "2017-11-12" if i % 3 == 0 else None)
+        dialogues = [_dialogue(f"{prefix}-{i}", "2017-11-11", "2017-11-12" if i % 3 == 0 else None,
+                               "여성" if i % 2 else "남성")
                      for i in range(8)]
         name = unicodedata.normalize("NFD", f"{topic}.json")
         (root / name).write_text(json.dumps({"numberOfItems": 8, "data": dialogues}, ensure_ascii=False),
@@ -151,21 +154,6 @@ def test_load_excluded_dialogues(tmp_path: Path) -> None:
     path = tmp_path / "fewshot.jsonl"
     path.write_text(json.dumps({"source_ref": {"dialogue_id": "d9"}}) + "\n", encoding="utf-8")
     assert load_excluded_dialogues(path) == {"d9"}
-
-
-def test_shift_preserves_intervals_and_time_of_day() -> None:
-    """날짜만 하루 단위로 옮겨 시간 간격과 시각이 그대로다."""
-    base = datetime(2017, 11, 11, 21, 5, tzinfo=KST)
-    records = [
-        EvidenceRecord(f"r{i}", SourceType.MESSENGER, "x", "t", base + delta, "s", "c", {"k": "v"})
-        for i, delta in enumerate([timedelta(0), timedelta(minutes=2), timedelta(hours=11, minutes=25)])
-    ]
-    shifted, days, over = shift_into_period(records, date(2026, 3, 1), date(2026, 3, 31), random.Random(1))
-    assert not over
-    assert [r.timestamp - shifted[0].timestamp for r in shifted] == [r.timestamp - base for r in records]
-    assert [r.timestamp.time() for r in shifted] == [r.timestamp.time() for r in records]
-    assert date(2026, 3, 1) <= shifted[0].timestamp.date() and shifted[-1].timestamp.date() <= date(2026, 3, 31)
-    assert shifted[0].timestamp - timedelta(days=days) == base
 
 
 # ---------- 조립 ----------
@@ -297,7 +285,7 @@ def test_cli_writes_device(scenario_file: Path, aihub_root: Path, tmp_path: Path
     out = tmp_path / "devices"
     assert main([str(scenario_file), "--aihub", str(aihub_root), "--out", str(out)]) == 0
     stats = json.loads((out / "private" / "stats.json").read_text(encoding="utf-8"))
-    assert stats["background_threads"] == 6 and stats["synthetic_threads"] == 2
+    assert stats["background_dialogues"] == 6 and stats["synthetic_threads"] == 2
 
 
 def test_scenario_names_are_unique_on_device(device) -> None:
@@ -317,3 +305,98 @@ def test_name_generator_draw_never_returns_reserved() -> None:
     reserved = {gen.reserve() for _ in range(50)}
     drawn = {gen.draw() for _ in range(5000)}
     assert not reserved & drawn
+
+
+# ---------- 여러 날 세션 묶기 ----------
+
+def test_plan_session_days_keeps_sessions_apart() -> None:
+    """세션은 기간 안에서 순서대로, 서로 겹치지 않게 배치된다."""
+    spans = [0, 2, 0, 1]
+    for seed in range(50):
+        starts = plan_session_days(spans, date(2026, 3, 1), date(2026, 3, 31), random.Random(seed))
+        for (a, span), b in zip(zip(starts, spans), starts[1:]):
+            assert (b - a).days >= span + 1
+        assert starts[0] >= date(2026, 3, 1)
+        assert starts[-1] + timedelta(days=spans[-1]) <= date(2026, 3, 31)
+
+
+def test_plan_session_days_rejects_overfull_period() -> None:
+    """세션이 기간에 다 들어가지 않으면 None을 돌려준다."""
+    assert plan_session_days([10, 10, 10], date(2026, 3, 1), date(2026, 3, 20), random.Random(0)) is None
+
+
+def _background_threads(assembled):
+    """조립 결과에서 배경 대화방별 레코드와 출처를 모은다."""
+    from collections import defaultdict
+
+    origin = {e["device_record_id"]: e for e in assembled.provenance}
+    threads = defaultdict(list)
+    for record in assembled.records:
+        if origin[record.record_id]["origin"] == "aihub_sns":
+            threads[record.thread_id].append((record, origin[record.record_id]))
+    return threads
+
+
+def test_sessions_share_contact_and_profile(device) -> None:
+    """한 대화방으로 묶인 세션들은 같은 상대 연락처를 쓰고 성별도 같다."""
+    _, assembled = device
+    for items in _background_threads(assembled).values():
+        dialogues = {p["original_source_ref"]["dialogue_id"] for _, p in items}
+        contacts = {r.sender for r, _ in items if r.sender != OWNER_ID}
+        assert len(contacts) <= 1
+        genders = {"남" if int(d.split("-")[1]) % 2 == 0 else "여" for d in dialogues}
+        assert len(genders) == 1, dialogues
+
+
+def test_sessions_do_not_overlap_in_days(device) -> None:
+    """한 대화방의 세션들은 서로 다른 날에 있고, 세션 안 시각은 원본 그대로다."""
+    _, assembled = device
+    for items in _background_threads(assembled).values():
+        by_dialogue = {}
+        for record, prov in items:
+            by_dialogue.setdefault(prov["original_source_ref"]["dialogue_id"], []).append(record)
+        spans = sorted((min(r.timestamp for r in rs), max(r.timestamp for r in rs)) for rs in by_dialogue.values())
+        for (_, end_a), (start_b, _) in zip(spans, spans[1:]):
+            assert end_a.date() < start_b.date()
+        for rs in by_dialogue.values():
+            assert {r.timestamp.strftime("%H:%M") for r in rs} == {"21:05", "21:07", "08:30"}
+
+
+def test_provenance_restores_original_date_and_sender(device) -> None:
+    """출처 기록의 날짜 이동 일수와 원래 발신자로 원본을 복원할 수 있다."""
+    _, assembled = device
+    for items in _background_threads(assembled).values():
+        for record, prov in items:
+            original_day = record.timestamp.date() - timedelta(days=prov["day_shift"])
+            assert original_day.isoformat() in ("2017-11-11", "2017-11-12")
+            assert prov["original_sender"].startswith("aihub_sns:")
+            assert prov["original_sender"].split(":")[1] == prov["original_source_ref"]["dialogue_id"]
+
+
+def test_multi_day_ratio_follows_session_distribution(tmp_path: Path) -> None:
+    """세션 수 분포대로 묶으면 배경의 여러 날 대화방 비율이 분포에 가까워진다."""
+    from evidence_trace.ingest.device import BackgroundDialogue, _background_conversations
+
+    config = DeviceConfig(date(2026, 3, 1), date(2026, 3, 31), 600, {}, 3, {1: 0.3, 2: 0.4, 3: 0.3})
+    items = [BackgroundDialogue("t", "t.json", _dialogue(f"x-{i}", "2017-11-11")) for i in range(600)]
+    convs, overflow = _background_conversations(items, config, random.Random(1))
+    multi = sum(len({r.timestamp.date() for r in c.records}) > 1 for c in convs) / len(convs)
+    assert overflow == 0
+    assert 0.6 <= multi <= 0.8
+    assert sum(len(c.topics) for c in convs) == 600
+
+
+def test_stats_report_multi_day_ratio(device) -> None:
+    """조립 통계에 배경·합성의 여러 날 대화방 비율이 기록된다."""
+    _, assembled = device
+    ratio = assembled.stats["multi_day_thread_ratio"]
+    assert set(ratio) == {"background", "synthetic"}
+    assert assembled.stats["background_dialogues"] == 6
+
+
+def test_invalid_session_distribution_is_rejected(tmp_path: Path) -> None:
+    """세션 수 분포가 잘못되면 설정을 거부한다."""
+    path = tmp_path / "s.yaml"
+    path.write_text(SCENARIO_YAML + BACKGROUND_YAML + "  sessions_per_thread: {0: 1.0}\n", encoding="utf-8")
+    with pytest.raises(AssemblyError, match="sessions_per_thread"):
+        DeviceConfig.from_scenario_file(path)

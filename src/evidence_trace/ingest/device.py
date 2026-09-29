@@ -13,8 +13,13 @@
 * 배경 대화는 AI Hub 원본에서 주제별 할당량만큼 무작위로 뽑는다. 합성 생성기의
   말투 예시로 쓴 대화는 제외한다.
 * 배경 대화마다 참여자 한 명을 기기 소유자로 지정한다.
-* 배경 대화의 날짜는 사건 기간 안으로 하루 단위로만 옮긴다. 대화 안의 시간
-  간격과 하루 중 시각 분포가 그대로 유지된다.
+* 배경 대화 여러 개를 "같은 상대와 다른 날 나눈 대화(세션)"로 묶어 한 대화방을
+  만든다. 대화방당 세션 수는 ``sessions_per_thread`` 분포를 따르며, 상대방의
+  성별·연령대가 같은 대화끼리만 묶는다. 합성 대화방은 여러 날에 걸쳐 이어지므로,
+  배경 대화방이 모두 하루짜리면 "여러 날에 걸친 대화방 = 사건"이라는 단서가
+  생기기 때문이다 (묶기 전 측정: 배경 3.5%, 합성 71.4%).
+* 세션은 사건 기간 안의 서로 겹치지 않는 날에 배치하고, 날짜는 하루 단위로만
+  옮긴다. 세션 안의 시간 간격과 하루 중 시각 분포는 그대로 유지된다.
 * 연락처 이름은 사건 인물과 배경 인물 모두 같은 이름 생성기로 붙인다. 실제
   휴대폰에도 흔한 호칭("엄마" 등)만 그대로 둔다. 사건 인물의 이름은 기기 안에서
   유일하게 예약하고, 배경 연락처는 나머지 이름에서 중복을 허용해 뽑는다(실제
@@ -23,9 +28,9 @@
   번호 순서로 합성 대화를 알아챌 수 없게 하기 위해서다.
 * 저장 전에 :func:`check_leaks`로 출처 흔적을 검사하고, 하나라도 있으면 저장하지 않는다.
 
-알려진 단순화: AI Hub 대화 하나를 대화방 하나로 둔다. 실제 메신저는 같은 상대와의
-대화가 한 방에 쌓이지만, 서로 다른 실제 인물의 대화를 한 방에 이어 붙이면 더
-부자연스러워지기 때문이다.
+알려진 단순화: 한 대화방의 세션들은 실제로는 서로 다른 AI Hub 참여자의 대화다.
+성별·연령대를 맞춰 묶지만 말투나 화제가 세션마다 달라질 수 있다. 기기 소유자도
+배경 대화마다 다른 실제 인물이다.
 
 Example:
     프로젝트 루트에서 실행한다::
@@ -86,6 +91,11 @@ GIVEN_NAMES = (
 """tuple[str, ...]: 이름 생성기의 이름 목록."""
 
 
+DEFAULT_SESSIONS_PER_THREAD: dict[int, float] = {1: 0.30, 2: 0.25, 3: 0.20, 4: 0.15, 5: 0.10}
+"""dict[int, float]: 배경 대화방당 세션 수의 기본 분포. 여러 날 대화방 비율이 약 70%로,
+시나리오 1 합성 대화방의 측정값(71.4%, 최대 5일)과 비슷하게 맞췄다."""
+
+
 class AssemblyError(RuntimeError):
     """조립에 필요한 조건이 충족되지 않을 때 발생한다."""
 
@@ -105,6 +115,7 @@ class DeviceConfig:
         dialogues: 배경 대화 수.
         topic_min: 주제 → 최소 대화 수.
         seed: 조립 난수 시드.
+        sessions_per_thread: 배경 대화방 하나에 묶을 세션(대화) 수 → 비율.
     """
 
     period_start: date
@@ -112,6 +123,9 @@ class DeviceConfig:
     dialogues: int
     topic_min: dict[str, int]
     seed: int
+    sessions_per_thread: dict[int, float] = field(
+        default_factory=lambda: dict(DEFAULT_SESSIONS_PER_THREAD)
+    )
 
     @classmethod
     def from_scenario_file(cls, path: Path) -> DeviceConfig:
@@ -136,13 +150,22 @@ class DeviceConfig:
                 unicodedata.normalize("NFC", str(k)): int(v)
                 for k, v in (background.get("topic_min") or {}).items()
             }
-            config = cls(start, end, int(background["dialogues"]), topic_min, int(background.get("seed", 0)))
+            sessions = {
+                int(k): float(v)
+                for k, v in (background.get("sessions_per_thread") or DEFAULT_SESSIONS_PER_THREAD).items()
+            }
+            config = cls(start, end, int(background["dialogues"]), topic_min,
+                         int(background.get("seed", 0)), sessions)
         except (KeyError, TypeError, ValueError) as exc:
             raise AssemblyError(f"시나리오의 period/background 항목을 읽을 수 없습니다: {exc}") from exc
         if config.period_end < config.period_start:
             raise AssemblyError("사건 기간의 끝이 시작보다 빠릅니다")
         if sum(config.topic_min.values()) > config.dialogues:
             raise AssemblyError("주제별 최소 대화 수의 합이 전체 배경 대화 수보다 큽니다")
+        if not config.sessions_per_thread or min(config.sessions_per_thread) < 1 or any(
+            w < 0 for w in config.sessions_per_thread.values()
+        ) or sum(config.sessions_per_thread.values()) <= 0:
+            raise AssemblyError("sessions_per_thread는 1 이상의 세션 수와 양수 비율이어야 합니다")
         return config
 
 
@@ -275,34 +298,6 @@ def sample_background(
     return chosen
 
 
-def shift_into_period(
-    records: list[EvidenceRecord], start: date, end: date, rng: random.Random
-) -> tuple[list[EvidenceRecord], int, bool]:
-    """대화의 날짜를 사건 기간 안으로 하루 단위로 옮긴다.
-
-    모든 메시지를 같은 일수만큼 옮기므로 대화 안의 시간 간격과 하루 중 시각이
-    그대로 유지된다. 대화 길이가 사건 기간보다 길면 첫날을 기간 시작에 맞추고
-    넘치는 부분은 그대로 둔다.
-
-    Args:
-        records: 한 대화의 레코드들.
-        start: 사건 기간 첫날.
-        end: 사건 기간 마지막 날.
-        rng: 재현 가능한 난수 생성기.
-
-    Returns:
-        옮긴 레코드 목록, 옮긴 일수(원래 날짜 복원용), 기간을 넘쳤는지 여부.
-    """
-    first = min(r.timestamp.date() for r in records)
-    last = max(r.timestamp.date() for r in records)
-    span = (last - first).days
-    room = (end - start).days - span
-    new_first = start + timedelta(days=rng.randint(0, room)) if room >= 0 else start
-    offset = timedelta(days=(new_first - first).days)
-    shifted = [replace(r, timestamp=r.timestamp + offset) for r in records]
-    return shifted, offset.days, room < 0
-
-
 # ---------------------------------------------------------------------------
 # 연락처 이름
 # ---------------------------------------------------------------------------
@@ -374,8 +369,10 @@ class Conversation:
         records: 원본 레코드 (배경 대화는 날짜를 옮긴 뒤).
         owner: 이 대화에서 기기 소유자인 원본 발신자 ID.
         participants: 원본 참여자 ID (소유자 포함).
-        topic: 배경 대화의 주제. 합성은 ``None``.
-        day_shift: 날짜를 옮긴 일수. 원래 날짜 = 기기 날짜 - ``day_shift``일.
+        topics: 배경 대화방에 묶인 세션들의 주제. 합성은 빈 목록.
+        day_shift: 원본 레코드 ID → 날짜를 옮긴 일수. 원래 날짜 = 기기 날짜 - 일수.
+        original_sender: 원본 레코드 ID → 원래 발신자 ID. 묶으면서 발신자를 대화방
+            공통 ID로 바꾼 경우의 복원용.
     """
 
     origin: str
@@ -383,8 +380,9 @@ class Conversation:
     records: list[EvidenceRecord]
     owner: str
     participants: list[str]
-    topic: str | None = None
-    day_shift: int = 0
+    topics: list[str] = field(default_factory=list)
+    day_shift: dict[str, int] = field(default_factory=dict)
+    original_sender: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -432,10 +430,136 @@ def _synthetic_conversations(scenario: Scenario, generated: GenerationResult) ->
     return conversations
 
 
+def _contact_profile(dialogue: dict[str, Any], participant_id: str) -> tuple[str, str]:
+    """원본 헤더에서 참여자의 (성별, 연령대)를 꺼낸다.
+
+    Args:
+        dialogue: 원본 대화 JSON.
+        participant_id: 원본 참여자 ID (예: ``"P01"``).
+
+    Returns:
+        (성별, 연령대). 정보가 없으면 빈 문자열.
+    """
+    for info in dialogue["header"].get("participantsInfo", []):
+        if str(info.get("participantID")) == participant_id:
+            return str(info.get("gender", "")), str(info.get("age", ""))
+    return "", ""
+
+
+@dataclass
+class _Session:
+    """묶기 전의 배경 대화(세션) 하나.
+
+    Attributes:
+        topic: 주제.
+        records: 원본 레코드.
+        owner: 소유자로 정한 원본 참여자 ID.
+        others: 소유자를 뺀 원본 참여자 ID (상대방 프로필 순으로 정렬).
+        profile: 상대방들의 (성별, 연령대) 목록. 같은 프로필끼리만 묶는다.
+        span: 세션이 걸친 일수 - 1.
+    """
+
+    topic: str
+    records: list[EvidenceRecord]
+    owner: str
+    others: list[str]
+    profile: tuple[tuple[str, str], ...]
+    span: int
+
+
+def _to_session(item: BackgroundDialogue, rng: random.Random) -> _Session | None:
+    """배경 대화를 레코드로 바꾸고 소유자를 정해 세션으로 만든다.
+
+    Args:
+        item: 뽑힌 배경 대화.
+        rng: 재현 가능한 난수 생성기.
+
+    Returns:
+        세션. 레코드가 하나도 없으면 None.
+    """
+    records = dialogue_to_records(item.dialogue, item.source_file)
+    if not records:
+        return None
+    participants = sorted({r.sender for r in records} | {p for r in records for p in r.recipients})
+    owner = rng.choice(participants)
+    keyed = sorted(
+        ((_contact_profile(item.dialogue, p.rsplit(":", 1)[-1]), p) for p in participants if p != owner)
+    )
+    days = [r.timestamp.date() for r in records]
+    return _Session(
+        topic=item.topic,
+        records=records,
+        owner=owner,
+        others=[p for _, p in keyed],
+        profile=tuple(k for k, _ in keyed),
+        span=(max(days) - min(days)).days,
+    )
+
+
+def _draw_session_count(weights: dict[int, float], rng: random.Random) -> int:
+    """세션 수 분포에서 하나를 뽑는다.
+
+    Args:
+        weights: 세션 수 → 비율.
+        rng: 재현 가능한 난수 생성기.
+
+    Returns:
+        세션 수.
+    """
+    counts = sorted(weights)
+    return rng.choices(counts, weights=[weights[c] for c in counts])[0]
+
+
+def plan_session_days(spans: list[int], start: date, end: date, rng: random.Random) -> list[date] | None:
+    """세션들을 사건 기간 안의 서로 겹치지 않는 날에 순서대로 배치한다.
+
+    세션 i가 차지하는 날은 ``spans[i] + 1``일이다. 남는 날(여유)을 세션 사이와
+    앞뒤에 무작위로 나눠 넣는다.
+
+    Args:
+        spans: 세션별 (걸친 일수 - 1).
+        start: 사건 기간 첫날.
+        end: 사건 기간 마지막 날.
+        rng: 재현 가능한 난수 생성기.
+
+    Returns:
+        세션별 첫날 목록. 기간 안에 다 들어가지 않으면 None.
+
+    Example:
+        >>> days = plan_session_days([0, 1, 0], date(2026, 3, 1), date(2026, 3, 31), random.Random(0))
+        >>> days == sorted(days) and (days[1] - days[0]).days >= 1 and (days[2] - days[1]).days >= 2
+        True
+    """
+    total = (end - start).days + 1
+    slack = total - sum(span + 1 for span in spans)
+    if slack < 0:
+        return None
+    cuts = sorted(rng.randint(0, slack) for _ in spans)
+    starts: list[date] = []
+    cursor = start
+    previous_cut = 0
+    for span, cut in zip(spans, cuts):
+        cursor += timedelta(days=cut - previous_cut)
+        starts.append(cursor)
+        cursor += timedelta(days=span + 1)
+        previous_cut = cut
+    return starts
+
+
 def _background_conversations(
     background: list[BackgroundDialogue], config: DeviceConfig, rng: random.Random
 ) -> tuple[list[Conversation], int]:
-    """배경 대화를 레코드로 바꾸고 소유자를 정한 뒤 날짜를 옮긴다.
+    """배경 대화를 세션으로 바꾸고 같은 상대 프로필끼리 묶어 여러 날 대화방을 만든다.
+
+    묶는 절차는 다음과 같다.
+
+    1. 대화마다 소유자를 정하고, 상대방의 (성별, 연령대) 프로필을 구한다.
+    2. 프로필이 같은 대화끼리 모아 섞은 뒤, 세션 수 분포에서 뽑은 개수만큼씩
+       떼어 한 대화방으로 만든다.
+    3. 세션들을 사건 기간 안의 겹치지 않는 날에 배치하고 날짜를 옮긴다. 기간에
+       다 들어가지 않으면 마지막 세션을 떼어 다음 대화방으로 넘긴다.
+    4. 세션마다 달랐던 원본 참여자 ID를 대화방 공통 ID(소유자, 상대 1, 상대 2 ...)로
+       바꾼다. 원래 ID는 :attr:`Conversation.original_sender`에 남긴다.
 
     Args:
         background: 뽑힌 배경 대화.
@@ -443,21 +567,68 @@ def _background_conversations(
         rng: 재현 가능한 난수 생성기.
 
     Returns:
-        배경 대화방 목록과, 사건 기간을 넘친 대화 수.
+        배경 대화방 목록과, 기간에 다 들어가지 않아 첫날에 맞춘 세션 수.
     """
+    sessions = [s for s in (_to_session(item, rng) for item in background) if s is not None]
+    buckets: dict[tuple[tuple[str, str], ...], list[_Session]] = defaultdict(list)
+    for session in sessions:
+        buckets[session.profile].append(session)
+
+    groups: list[list[_Session]] = []
+    for profile in sorted(buckets):
+        pool = buckets[profile]
+        rng.shuffle(pool)
+        while pool:
+            take = min(_draw_session_count(config.sessions_per_thread, rng), len(pool))
+            groups.append([pool.pop() for _ in range(take)])
+
     conversations: list[Conversation] = []
     overflow = 0
-    for item in background:
-        records = dialogue_to_records(item.dialogue, item.source_file)
-        if not records:
+    pending = list(groups)
+    while pending:
+        group = pending.pop(0)
+        starts = plan_session_days([s.span for s in group], config.period_start, config.period_end, rng)
+        if starts is None and len(group) > 1:
+            pending.insert(0, group[:-1])
+            pending.append(group[-1:])
             continue
-        participants = sorted({r.sender for r in records} | {p for r in records for p in r.recipients})
-        owner = rng.choice(participants)
-        shifted, days, over = shift_into_period(records, config.period_start, config.period_end, rng)
-        overflow += over
+
+        key = f"{AIHUB_DATASET}:thread:{len(conversations):05d}"
+        owner_key = f"{key}:owner"
+        width = max(len(s.others) for s in group)
+        other_keys = [f"{key}:c{j}" for j in range(width)]
+        records: list[EvidenceRecord] = []
+        shifts: dict[str, int] = {}
+        senders: dict[str, str] = {}
+        for i, session in enumerate(group):
+            first = min(r.timestamp.date() for r in session.records)
+            target = starts[i] if starts is not None else config.period_start
+            if starts is None:
+                overflow += 1
+            offset = timedelta(days=(target - first).days)
+            alias = {session.owner: owner_key}
+            alias.update({p: other_keys[j] for j, p in enumerate(session.others)})
+            for record in session.records:
+                moved = replace(
+                    record,
+                    timestamp=record.timestamp + offset,
+                    sender=alias[record.sender],
+                    recipients=tuple(alias[p] for p in record.recipients),
+                )
+                records.append(moved)
+                shifts[record.record_id] = offset.days
+                senders[record.record_id] = record.sender
         conversations.append(
-            Conversation(AIHUB_DATASET, records[0].thread_id, shifted, owner, participants,
-                         item.topic, days)
+            Conversation(
+                origin=AIHUB_DATASET,
+                original_thread=key,
+                records=records,
+                owner=owner_key,
+                participants=[owner_key, *other_keys],
+                topics=[s.topic for s in group],
+                day_shift=shifts,
+                original_sender=senders,
+            )
         )
     return conversations, overflow
 
@@ -554,7 +725,8 @@ def assemble(
             "origin": conv.origin,
             "original_record_id": original.record_id,
             "original_source_ref": original.source_ref,
-            "day_shift": conv.day_shift,
+            "original_sender": conv.original_sender.get(original.record_id, original.sender),
+            "day_shift": conv.day_shift.get(original.record_id, 0),
         })
 
     threads = {
@@ -584,6 +756,12 @@ def assemble(
         "persons": persons,
     }
 
+    def multi_day_ratio(convs: list[Conversation]) -> float:
+        if not convs:
+            return 0.0
+        multi = sum(len({r.timestamp.date() for r in c.records}) > 1 for c in convs)
+        return round(multi / len(convs), 4)
+
     stats = {
         "messages": len(records),
         "synthetic_messages": sum(len(c.records) for c in synthetic),
@@ -592,8 +770,14 @@ def assemble(
         "synthetic_threads": len(synthetic),
         "background_threads": len(backdrop),
         "contacts": len(contacts) - 1,
-        "background_topics": dict(sorted(Counter(c.topic for c in backdrop).items())),
-        "background_overflow_dialogues": overflow,
+        "background_dialogues": sum(len(c.topics) for c in backdrop),
+        "background_topics": dict(sorted(Counter(t for c in backdrop for t in c.topics).items())),
+        "background_sessions_per_thread": dict(sorted(Counter(len(c.topics) for c in backdrop).items())),
+        "multi_day_thread_ratio": {
+            "background": multi_day_ratio(backdrop),
+            "synthetic": multi_day_ratio(synthetic),
+        },
+        "background_overflow_sessions": overflow,
         "first_message": records[0].timestamp.isoformat() if records else None,
         "last_message": records[-1].timestamp.isoformat() if records else None,
         "seed": config.seed,
