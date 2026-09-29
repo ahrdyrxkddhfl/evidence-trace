@@ -9,9 +9,10 @@
   어느 증거인가)도 코드가 배치한 위치로 기록한다. LLM의 주장은 정답에
   쓰이지 않는다.
 * **후처리**는 LLM이 프롬프트만으로는 잘 지키지 못하는 규칙을 결정적으로
-  맞춘다. 40자가 넘는 메시지를 문장부호 위치에서 쪼개 여러 메시지로 보내게
-  하고(실제 사람이 끊어 보내는 방식), 이모지를 지운다(AI Hub가 원본의
-  이모티콘을 가린 가공과 같은 방향).
+  맞춘다. 긴 메시지를 문장부호 위치에서 20자 안팎으로 쪼개 여러 메시지로 보내게
+  하고(실제 사람이 끊어 보내는 방식), 문장 끝 마침표·쉼표를 정리하고, 이모지를
+  지운다(AI Hub가 원본의 이모티콘을 가린 가공과 같은 방향). 의미를 바꾸지 않는
+  규칙만 두므로 검수가 끝난 결과에도 :func:`renormalize_results`로 소급 적용한다.
 * **검사기**는 실제 데이터 통계로 정한 기준(한 메시지 40자 이하, 이모지
   1% 수준, 시스템 표시 금지 등)으로 후처리 결과를 걸러 불합격이면 다시
   생성한다.
@@ -72,6 +73,10 @@ DATASET_NAME = "synthetic"
 MAX_MESSAGE_CHARS = 40
 """int: 한 메시지의 최대 글자 수. AI Hub 실제 메시지의 99% 지점(39자) 기준."""
 
+SPLIT_TARGET_CHARS = 20
+"""int: 후처리에서 메시지를 끊는 기준 글자 수. 실제 메시지는 평균 약 10자, 90% 지점이
+약 19자인데 LLM 출력은 평균 약 22자라, 문장부호 위치에서 이 길이 안팎으로 끊는다."""
+
 MAX_EMOJI_MESSAGES_PER_BEAT = 1
 """int: 한 번의 생성에서 허용하는 이모지 포함 메시지 수. 실제 비율은 약 1%."""
 
@@ -120,7 +125,21 @@ class ScenarioError(ValueError):
 
 
 class GenerationError(RuntimeError):
-    """재시도 한도 안에 검사기를 통과하는 출력을 얻지 못했을 때 발생한다."""
+    """재시도 한도 안에 검사기를 통과하는 출력을 얻지 못했을 때 발생한다.
+
+    Attributes:
+        log: 실패하기까지의 시도 기록. 실패한 대화방의 반려 사유도 통계에 남기기 위해 둔다.
+    """
+
+    def __init__(self, message: str, log: list[dict[str, Any]] | None = None) -> None:
+        """예외를 만든다.
+
+        Args:
+            message: 오류 메시지.
+            log: 실패하기까지의 시도 기록.
+        """
+        super().__init__(message)
+        self.log = log or []
 
 
 # ---------------------------------------------------------------------------
@@ -629,21 +648,56 @@ OUTPUT_SCHEMA: dict[str, Any] = {
 """dict: LLM 출력에 강제하는 기본 JSON 스키마."""
 
 
-def build_output_schema(labels: Iterable[str]) -> dict[str, Any]:
-    """발화자를 주어진 역할 이름으로만 제한한 JSON 스키마를 만든다.
+def build_output_schema(
+    labels: Iterable[str],
+    opener_label: str | None = None,
+    message_range: tuple[int, int] | None = None,
+) -> dict[str, Any]:
+    """발화자와 메시지 수를 형식으로 제한한 JSON 스키마를 만든다.
+
+    ``opener_label``이 있으면 ``first_message`` 칸을 따로 두고, 그 발화자를
+    ``opener_label`` 하나로 제한한다. ``message_range``가 있으면 ``messages``
+    배열의 최소·최대 길이를 정한다(첫 메시지 칸이 있으면 그만큼 뺀다). 모델이
+    특정 역할로 시작하거나 특정 개수를 고집하는 쏠림은 다시 뽑기로 고쳐지지 않으므로,
+    형식 자체로 강제한다. 검사기의 확인은 그대로 두어 이중으로 거른다.
 
     Args:
         labels: 이 장면에서 말할 수 있는 역할 이름들.
+        opener_label: 첫 메시지를 보내야 하는 역할 이름. 없으면 None.
+        message_range: 첫 메시지를 포함한 전체 메시지 수의 (최소, 최대). 없으면 제한 없음.
 
     Returns:
-        ``speaker``가 ``labels`` 중 하나로 제한된 스키마.
+        JSON 스키마.
 
     Example:
         >>> build_output_schema(["판매자"])["properties"]["messages"]["items"]["properties"]["speaker"]
         {'type': 'string', 'enum': ['판매자']}
+        >>> first = build_output_schema(["판매자", "구매자"], "판매자")["properties"]["first_message"]
+        >>> first["properties"]["speaker"]
+        {'type': 'string', 'enum': ['판매자']}
+        >>> items = build_output_schema(["나", "너"], "너", (2, 5))["properties"]["messages"]
+        >>> items["minItems"], items["maxItems"]
+        (1, 4)
     """
     schema = json.loads(json.dumps(OUTPUT_SCHEMA))
     schema["properties"]["messages"]["items"]["properties"]["speaker"]["enum"] = sorted(labels)
+    if opener_label:
+        first = {
+            "type": "object",
+            "properties": {
+                "speaker": {"type": "string", "enum": [opener_label]},
+                "text": {"type": "string"},
+            },
+            "required": ["speaker", "text"],
+        }
+        # 모델은 스키마의 속성 순서대로 쓰므로 첫 메시지를 먼저 두어 대화 순서와 맞춘다.
+        schema["properties"] = {"first_message": first, "messages": schema["properties"]["messages"]}
+        schema["required"] = ["first_message", "messages"]
+    if message_range is not None:
+        offset = 1 if opener_label else 0
+        low, high = message_range
+        schema["properties"]["messages"]["minItems"] = max(0, low - offset)
+        schema["properties"]["messages"]["maxItems"] = max(0, high - offset)
     return schema
 
 
@@ -721,6 +775,8 @@ SYSTEM_PROMPT = """\
    송장번호 같은 그 밖의 번호는 #@번호#로 쓴다.
    이모티콘은 이모지 대신 #@이모티콘#으로 쓴다.
 3. '#@시스템#'으로 시작하는 표시는 절대 쓰지 않는다. 위에 나온 표시 말고 다른 '#' 표시를 만들지 않는다.
+   가리는 것은 개인정보(이름, 계좌, 전화번호, 주소, 링크, 번호)뿐이다. 금액이나 가게·장소 이름은
+   '5만원', '바다 앞 펜션'처럼 그냥 글자로 쓴다.
 4. 매 메시지마다 상대 이름을 부르지 않는다. 계좌 같은 정보는 한 번만 보낸다.
 5. 영어 단어와 통화 기호(₩ 등)를 쓰지 않는다.
 6. speaker에는 [등장인물]에 나온 역할 이름을 그대로 쓰고, 각 역할의 입장을 끝까지 지킨다.
@@ -782,7 +838,11 @@ def build_user_prompt(
     else:
         task = f"다음 흐름의 대화를 메시지 {count}로 써라. 말하는 사람: {speakers}\n흐름: {beat.text}"
         if beat.opener:
-            task += f"\n첫 메시지는 {thread.label_of(beat.opener)}가 보낸다."
+            opener = thread.label_of(beat.opener)
+            task += (
+                f"\n첫 메시지는 {opener}가 보낸다. first_message에 {opener}의 첫 메시지를, "
+                f"messages에 그 뒤에 이어지는 메시지를 쓴다. 메시지 수는 첫 메시지를 포함해 센다."
+            )
     if beat.avoid:
         task += f"\n절대 쓰면 안 되는 단어: {', '.join(beat.avoid)}"
     background = "평범한 일상 대화다." if thread.decoy else scenario.summary
@@ -855,12 +915,48 @@ def normalize_jamo(text: str) -> str:
     return composed.translate(_CONJOINING_TO_COMPAT)
 
 
+def trim_trailing_punct(text: str) -> str:
+    """메신저 말투에 맞게 문장 끝 문장부호를 정리한다.
+
+    실제 메시지는 약 17%만 문장부호로 끝나는데 LLM 출력은 약 72%가 그렇다.
+    규칙은 다음과 같다.
+
+    * 끝의 쉼표와 단독 마침표는 지운다.
+    * 말줄임표("...")와 물음표는 그대로 둔다.
+    * 끝의 느낌표 하나는 문장 내용으로 정해지는 절반에서만 지운다. 몇 번을
+      실행해도 같은 문장은 같은 결과가 나온다.
+
+    Args:
+        text: 원래 메시지.
+
+    Returns:
+        정리된 메시지. 정리하면 빈 문자열이 되는 경우 원래 메시지를 돌려준다.
+
+    Example:
+        >>> trim_trailing_punct("여기로 주세요.")
+        '여기로 주세요'
+        >>> trim_trailing_punct("그렇구나...")
+        '그렇구나...'
+        >>> trim_trailing_punct("언제 와요?")
+        '언제 와요?'
+    """
+    stripped = text.rstrip()
+    trimmed = stripped.rstrip(",")
+    if trimmed.endswith(".") and not trimmed.endswith(".."):
+        trimmed = trimmed[:-1].rstrip()
+    if trimmed.endswith("!") and not trimmed.endswith("!!"):
+        if hashlib.sha256(trimmed.encode("utf-8")).digest()[0] % 2 == 0:
+            trimmed = trimmed[:-1].rstrip()
+    return trimmed or stripped
+
+
 def normalize_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, str]], dict[str, int]]:
     """LLM 출력을 실제 메신저 말투에 맞게 결정적으로 정리한다.
 
     조합형 자모를 일반 자모로 바꾸고(:func:`normalize_jamo`), 이모지와 이모지
-    결합 문자를 지우고, 공백을 정리한 뒤, 40자를 넘는 메시지는
-    :func:`split_long_text`로 쪼개 같은 발화자의 연속 메시지로 만든다.
+    결합 문자를 지우고, 공백을 정리한 뒤, :data:`SPLIT_TARGET_CHARS`를 넘는
+    메시지는 :func:`split_long_text`로 쪼개 같은 발화자의 연속 메시지로 만들고,
+    조각마다 문장 끝 문장부호를 정리한다(:func:`trim_trailing_punct`).
     이모지를 지운 뒤 비어 버린 메시지는 버린다.
 
     Args:
@@ -868,14 +964,15 @@ def normalize_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, s
 
     Returns:
         정리된 메시지 목록과 ``{"split": 쪼갠 메시지 수, "emoji_removed": 이모지를
-        지운 메시지 수, "jamo_fixed": 자모를 고친 메시지 수}`` 통계.
+        지운 메시지 수, "jamo_fixed": 자모를 고친 메시지 수, "punct_trimmed":
+        문장부호를 정리한 조각 수}`` 통계.
 
     Example:
         >>> out, stats = normalize_messages([{"speaker": "A", "text": "좋아요😊"}])
         >>> out, stats
-        ([{'speaker': 'A', 'text': '좋아요'}], {'split': 0, 'emoji_removed': 1, 'jamo_fixed': 0})
+        ([{'speaker': 'A', 'text': '좋아요'}], {'split': 0, 'emoji_removed': 1, 'jamo_fixed': 0, 'punct_trimmed': 0})
     """
-    stats = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0}
+    stats = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 0}
     result: list[dict[str, str]] = []
     for message in messages:
         original = str(message.get("text", ""))
@@ -888,10 +985,14 @@ def normalize_messages(messages: list[dict[str, str]]) -> tuple[list[dict[str, s
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
         if not cleaned:
             continue
-        pieces = split_long_text(cleaned)
+        pieces = split_long_text(cleaned, SPLIT_TARGET_CHARS)
         if len(pieces) > 1:
             stats["split"] += 1
-        result.extend({"speaker": message.get("speaker", ""), "text": piece} for piece in pieces)
+        for piece in pieces:
+            trimmed = trim_trailing_punct(piece)
+            if trimmed != piece:
+                stats["punct_trimmed"] += 1
+            result.append({"speaker": message.get("speaker", ""), "text": trimmed})
     return result, stats
 
 
@@ -990,6 +1091,8 @@ def validate_messages(
 def _parse_output(raw: str) -> list[dict[str, str]]:
     """LLM 응답에서 메시지 목록을 꺼낸다.
 
+    ``first_message``가 있으면 목록 맨 앞에 붙인다.
+
     Args:
         raw: LLM이 돌려준 문자열.
 
@@ -998,12 +1101,21 @@ def _parse_output(raw: str) -> list[dict[str, str]]:
 
     Raises:
         ValueError: JSON이 아니거나 ``messages`` 목록이 없는 경우.
+
+    Example:
+        >>> _parse_output('{"first_message": {"speaker": "판매자", "text": "도착했어요"}, '
+        ...               '"messages": [{"speaker": "구매자", "text": "2번 출구요"}]}')
+        [{'speaker': '판매자', 'text': '도착했어요'}, {'speaker': '구매자', 'text': '2번 출구요'}]
     """
     data = json.loads(raw)
     messages = data.get("messages") if isinstance(data, dict) else None
     if not isinstance(messages, list):
         raise ValueError("messages 목록이 없습니다")
-    return [m for m in messages if isinstance(m, dict)]
+    parsed = [m for m in messages if isinstance(m, dict)]
+    first = data.get("first_message")
+    if isinstance(first, dict):
+        parsed.insert(0, first)
+    return parsed
 
 
 # ---------------------------------------------------------------------------
@@ -1169,7 +1281,7 @@ def generate(
             else:
                 allowed = {thread.label_of(s) for s in beat.speakers}
                 opener_label = thread.label_of(beat.opener) if beat.opener else None
-                schema = build_output_schema(allowed)
+                schema = build_output_schema(allowed, opener_label, beat.message_range)
                 problems: list[str] = []
                 messages = []
                 for attempt in range(1, max_attempts + 1):
@@ -1181,7 +1293,7 @@ def generate(
                         _beat_seed(seed, scenario.id, thread.id, beat.index, attempt),
                         schema,
                     )
-                    fixes = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0}
+                    fixes = {"split": 0, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 0}
                     try:
                         raw_messages = _parse_output(raw)
                         low, high = beat.message_range
@@ -1203,7 +1315,8 @@ def generate(
                         break
                 else:
                     raise GenerationError(
-                        f"{thread.id} 장면 {beat.index}: {max_attempts}회 시도 모두 불합격 — {problems}"
+                        f"{thread.id} 장면 {beat.index}: {max_attempts}회 시도 모두 불합격 — {problems}",
+                        log,
                     )
 
             times = schedule_times(beat.at, len(messages), following, rng)
@@ -1288,6 +1401,79 @@ def merge_results(previous: GenerationResult, update: GenerationResult) -> Gener
     return GenerationResult(records=records, answers=answers, log=previous.log + update.log)
 
 
+@dataclass
+class IncrementalOutcome:
+    """대화방 단위 생성의 결과.
+
+    Attributes:
+        result: 저장된 마지막 결과 (성공한 대화방까지 합쳐진 상태).
+        completed: 이번 실행에서 생성·저장에 성공한 대화방 ID (순서대로).
+        remaining: 생성하지 못한 대화방 ID (실패한 것 포함, 순서대로).
+        error: 멈춘 이유. 모두 성공했으면 None.
+        attempts: 이번 실행의 LLM 시도 기록.
+    """
+
+    result: GenerationResult
+    completed: list[str]
+    remaining: list[str]
+    error: str | None
+    attempts: list[dict[str, Any]]
+
+
+def generate_incrementally(
+    scenario: Scenario,
+    model: ChatModel,
+    fewshot: FewShotPool,
+    previous: GenerationResult,
+    thread_ids: list[str],
+    out_dir: Path,
+    progress: Callable[[str], None] | None = None,
+    **options: Any,
+) -> IncrementalOutcome:
+    """대화방을 하나씩 생성해 기존 결과에 합치고, 하나 끝날 때마다 저장한다.
+
+    어떤 대화방이 시도 한도 안에 검사를 통과하지 못하면 거기서 멈추지만, 그 전에
+    성공한 대화방은 이미 저장되어 있다. 대화방마다 독립된 난수를 쓰므로 한꺼번에
+    생성한 결과와 같다.
+
+    Args:
+        scenario: 시나리오.
+        model: 메시지 문장을 쓸 LLM.
+        fewshot: 말투 예시 묶음.
+        previous: 기존 결과 (디스크에서 읽은 것).
+        thread_ids: 생성할 대화방 ID. 시나리오 순서대로 처리한다.
+        out_dir: 저장 폴더.
+        progress: 진행 상황 문자열을 받을 함수.
+        **options: :func:`generate`에 그대로 넘길 인자 (seed, max_attempts 등).
+
+    Returns:
+        저장된 결과, 성공·남은 대화방 목록, 멈춘 이유, 이번 실행의 시도 기록.
+
+    Raises:
+        ScenarioError: 시나리오에 없는 대화방이 있는 경우.
+    """
+    known = [t.id for t in scenario.threads]
+    unknown = set(thread_ids) - set(known)
+    if unknown:
+        raise ScenarioError(f"시나리오에 없는 대화방: {sorted(unknown)}")
+    ordered = [t for t in known if t in set(thread_ids)]
+
+    current = previous
+    completed: list[str] = []
+    attempts: list[dict[str, Any]] = []
+    for index, thread_id in enumerate(ordered):
+        try:
+            update = generate(scenario, model, fewshot, only_threads={thread_id}, progress=progress, **options)
+        except GenerationError as exc:
+            attempts += [e for e in exc.log if not e.get("literal")]
+            return IncrementalOutcome(current, completed, ordered[index:], str(exc), attempts)
+        attempts += [e for e in update.log if not e.get("literal")]
+        current = merge_results(current, update)
+        write_outputs(scenario, current, out_dir)
+        completed.append(thread_id)
+    return IncrementalOutcome(current, completed, [], None, attempts)
+
+
 def load_results(out_dir: Path) -> GenerationResult:
     """저장된 생성 결과를 읽는다. 레코드는 무결성 검증을 거친다.
 
@@ -1312,30 +1498,68 @@ def load_results(out_dir: Path) -> GenerationResult:
     return GenerationResult(records=records, answers=answers, log=log)
 
 
-def renormalize_results(result: GenerationResult) -> tuple[GenerationResult, int]:
-    """이미 만든 결과에 현재의 결정적 후처리(자모 정규화)를 다시 적용한다.
+def renormalize_results(result: GenerationResult) -> tuple[GenerationResult, dict[str, int]]:
+    """이미 만든 결과에 현재의 결정적 후처리를 다시 적용한다.
 
-    LLM을 다시 부르지 않으므로 검수를 통과한 문장의 내용은 바뀌지 않는다.
-    레코드 ID는 그대로이고 무결성 해시만 새로 계산되므로 정답지도 유지된다.
-    후처리 규칙을 개선했을 때, 검수가 끝난 결과를 다시 생성하지 않고
-    규칙만 소급 적용하기 위해 쓴다.
+    LLM을 다시 부르지 않는다. 적용하는 규칙(자모 정규화, 문장부호 정리, 문장부호
+    위치에서 끊기)은 모두 의미를 바꾸지 않으므로 검수 결과가 그대로 유효하다.
+    고정 문구(literal/event) 메시지는 건드리지 않는다.
+
+    메시지를 끊으면 레코드 수가 늘어나므로 대화방마다 레코드 ID를 순서대로 다시
+    매기고, 정답지와 오답 후보 목록의 ID도 새 ID로 바꾼다. 끊어진 조각들은 원래
+    메시지와 같은 시각을 가진다.
 
     Args:
         result: 기존 생성 결과.
 
     Returns:
-        새 결과와 바뀐 레코드 수. 시도 기록 끝에 이번 작업 기록이 추가된다.
+        새 결과와 ``{"changed": 내용이 바뀐 원래 메시지 수, "split": 여러 조각으로
+        나뉜 메시지 수, "records_before": 이전 레코드 수, "records_after": 이후
+        레코드 수}``. 시도 기록 끝에 이번 작업 기록이 추가된다.
     """
-    records: list[EvidenceRecord] = []
-    changed = 0
+    literal_beats = {
+        (e["thread"], str(e["beat"])) for e in result.log if e.get("literal")
+    }
+    by_thread: dict[str, list[EvidenceRecord]] = defaultdict(list)
     for record in result.records:
-        text = normalize_jamo(record.content)
-        if text != record.content:
-            record = replace(record, content=text, kind=classify_kind(text))
-            changed += 1
-        records.append(record)
-    log = result.log + [{"action": "renormalize", "changed": changed}]
-    return GenerationResult(records=records, answers=result.answers, log=log), changed
+        by_thread[record.thread_id].append(record)
+
+    new_ids: dict[str, list[str]] = {}
+    records: list[EvidenceRecord] = []
+    changed = split = 0
+    for thread_key, thread_records in by_thread.items():
+        thread_records.sort(key=lambda r: r.record_id)
+        counter = 0
+        for record in thread_records:
+            beat_key = (record.source_ref.get("thread"), record.source_ref.get("beat"))
+            if beat_key in literal_beats:
+                pieces = [record.content]
+            else:
+                text = normalize_jamo(record.content)
+                pieces = [trim_trailing_punct(p) for p in split_long_text(text, SPLIT_TARGET_CHARS)]
+            if pieces != [record.content]:
+                changed += 1
+            if len(pieces) > 1:
+                split += 1
+            ids = []
+            for piece in pieces:
+                new_id = f"{thread_key}:{counter:04d}"
+                counter += 1
+                records.append(replace(record, record_id=new_id, content=piece, kind=classify_kind(piece)))
+                ids.append(new_id)
+            new_ids[record.record_id] = ids
+    records.sort(key=lambda r: (r.timestamp, r.record_id))
+
+    answers = json.loads(json.dumps(result.answers))
+    for entry in answers.get("evidence", {}).values():
+        entry["record_ids"] = [n for old in entry["record_ids"] for n in new_ids[old]]
+    answers["decoys"] = {
+        thread: [n for old in ids for n in new_ids[old]] for thread, ids in answers.get("decoys", {}).items()
+    }
+    summary = {"changed": changed, "split": split,
+               "records_before": len(result.records), "records_after": len(records)}
+    log = result.log + [{"action": "renormalize", **summary}]
+    return GenerationResult(records=records, answers=answers, log=log), summary
 
 
 def build_review(scenario: Scenario, result: GenerationResult) -> list[str]:
@@ -1394,7 +1618,10 @@ def main(argv: list[str] | None = None) -> int:
     """명령행 진입점. 시나리오를 읽어 합성 대화를 생성하고 저장한다.
 
     ``--threads``를 주면 지정한 대화방만 다시 생성해 기존 결과에 합친다.
-    검수를 통과한 대화방은 그대로 두고 문제 있는 대화방만 고칠 때 쓴다.
+    검수를 통과한 대화방은 그대로 두고 문제 있는 대화방만 고칠 때 쓴다. 이때는
+    대화방 하나가 끝날 때마다 저장하므로, 중간에 멈춰도 성공한 대화방은 남고
+    남은 대화방 목록이 출력된다. ``--threads`` 없이 전체를 생성할 때는 모든
+    대화방이 성공해야만 저장해서, 실패했을 때 기존 결과가 반쯤 덮어써지지 않게 한다.
 
     Args:
         argv: 명령행 인자 목록. None이면 ``sys.argv[1:]``을 쓴다.
@@ -1420,44 +1647,64 @@ def main(argv: list[str] | None = None) -> int:
     if args.renormalize:
         try:
             scenario = load_scenario(args.scenario)
-            fixed, changed = renormalize_results(load_results(out_dir))
+            fixed, summary = renormalize_results(load_results(out_dir))
         except (ScenarioError, FileNotFoundError, ValueError) as exc:
             print(f"오류: {exc}", file=sys.stderr)
             return 1
         write_outputs(scenario, fixed, out_dir)
-        print(f"후처리 재적용: 레코드 {changed}건 수정 → {out_dir}")
+        print(f"후처리 재적용: 메시지 {summary['changed']}건 수정(분할 {summary['split']}건), "
+              f"레코드 {summary['records_before']} → {summary['records_after']}건 → {out_dir}")
         return 0
     if args.fewshot is None:
         print("오류: --fewshot이 필요합니다 (--renormalize가 아닐 때)", file=sys.stderr)
         return 1
 
+    report = lambda message: print(message, flush=True)  # noqa: E731
     try:
         scenario = load_scenario(args.scenario)
-        previous = load_results(out_dir) if only else None
         pool = FewShotPool.from_jsonl(args.fewshot)
-        result = generate(
-            scenario, OllamaChatModel(name=args.model), pool, seed=args.seed,
-            max_attempts=args.max_attempts, only_threads=only,
-            progress=lambda message: print(message, flush=True),
-        )
+        model = OllamaChatModel(name=args.model)
+        if only:
+            outcome = generate_incrementally(
+                scenario, model, pool, load_results(out_dir), sorted(only), out_dir,
+                progress=report, seed=args.seed, max_attempts=args.max_attempts,
+            )
+            _print_attempt_summary(outcome.attempts)
+            print(f"저장 완료 대화방 {len(outcome.completed)}개, "
+                  f"레코드 {len(outcome.result.records)}건 → {out_dir}")
+            if outcome.error:
+                print(f"오류: {outcome.error}", file=sys.stderr)
+                print(f"남은 대화방 (이 목록으로 --threads 다시 실행): {','.join(outcome.remaining)}",
+                      file=sys.stderr)
+                return 1
+            return 0
+        result = generate(scenario, model, pool, seed=args.seed,
+                          max_attempts=args.max_attempts, progress=report)
     except (ScenarioError, GenerationError, FileNotFoundError, ValueError) as exc:
         print(f"오류: {exc}", file=sys.stderr)
         return 1
 
-    attempts = [e for e in result.log if not e.get("literal")]
+    write_outputs(scenario, result, out_dir)
+    print(f"레코드 {len(result.records)}건, 증거 {len(result.answers['evidence'])}개 → {out_dir}")
+    _print_attempt_summary([e for e in result.log if not e.get("literal")])
+    return 0
+
+
+def _print_attempt_summary(attempts: list[dict[str, Any]]) -> None:
+    """LLM 시도 통계와 후처리 통계를 출력한다.
+
+    Args:
+        attempts: 고정 문구를 뺀 시도 기록.
+    """
     rejected = sum(1 for e in attempts if not e["ok"])
     accepted = [e for e in attempts if e["ok"]]
     split = sum(e.get("split", 0) for e in accepted)
     emoji = sum(e.get("emoji_removed", 0) for e in accepted)
     jamo = sum(e.get("jamo_fixed", 0) for e in accepted)
-    if previous is not None:
-        result = merge_results(previous, result)
-    write_outputs(scenario, result, out_dir)
-
-    print(f"레코드 {len(result.records)}건, 증거 {len(result.answers['evidence'])}개 → {out_dir}")
+    punct = sum(e.get("punct_trimmed", 0) for e in accepted)
     print(f"이번 실행: LLM 시도 {len(attempts)}회 중 검사기 반려 {rejected}회")
-    print(f"합격 출력 후처리: 긴 메시지 분할 {split}건, 이모지 제거 {emoji}건, 자모 정규화 {jamo}건")
-    return 0
+    print(f"합격 출력 후처리: 긴 메시지 분할 {split}건, 이모지 제거 {emoji}건, "
+          f"자모 정규화 {jamo}건, 문장부호 정리 {punct}건")
 
 
 if __name__ == "__main__":

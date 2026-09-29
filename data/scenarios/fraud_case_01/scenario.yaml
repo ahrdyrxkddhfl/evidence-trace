@@ -73,6 +73,52 @@ persons:
     role: 정상 거래 구매자 — 사건과 무관
     contact_name: 향단
 
+  - id: seller_bike
+    role: 중고 자전거 판매자 — 사건과 무관
+    contact_name: 옹고집
+  - id: seller_book
+    role: 중고 책 판매자 — 사건과 무관
+    contact_name: 월매
+  - id: buyer_clothes
+    role: 소유자의 옷을 산 구매자 — 사건과 무관
+    contact_name: 방자
+  - id: club_treasurer
+    role: 풋살 동호회 총무 — 사건과 무관
+    contact_name: 변학도
+  - id: coworker
+    role: 아르바이트 동료 — 사건과 무관
+    contact_name: 춘섬
+  - id: landlord
+    role: 집주인 — 사건과 무관
+    contact_name: 뺑덕
+  - id: sibling
+    role: 동생 — 사건과 무관
+    contact_name: 동생
+  - id: travel_friend
+    role: 여행을 같이 가는 친구 — 사건과 무관
+    contact_name: 토끼
+  - id: trainer
+    role: 헬스장 트레이너 — 사건과 무관
+    contact_name: 별주부
+  - id: classmate
+    role: 자격증 스터디 동료 — 사건과 무관
+    contact_name: 두꺼비
+  - id: craft_seller
+    role: 온라인 공방 판매자 — 사건과 무관
+    contact_name: 해님
+  - id: ticket_buyer
+    role: 소유자에게 콘서트 티켓을 양도받는 사람 — 사건과 무관
+    contact_name: 달님
+  - id: borrower
+    role: 소유자에게 돈을 빌린 친구 — 사건과 무관
+    contact_name: 까치
+  - id: salon
+    role: 미용실 원장 — 사건과 무관
+    contact_name: 우렁각시
+  - id: game_friend
+    role: 게임 친구 — 사건과 무관
+    contact_name: 구미호
+
 # ------------------------------------------------------------
 # 배경 대화: AI Hub 실제 대화를 가상 기기에 섞는다.
 # ------------------------------------------------------------
@@ -357,3 +403,405 @@ threads:
         at: 2026-03-04T20:00
         messages: 3-4
         intent: 구매자가 물건을 잘 받았다고 감사 인사를 하고 판매자가 잘 쓰라고 답함
+
+  # ---------- 추가 오답 후보 (문체 누출 희석용, 2026-09-29 추가) ----------
+  # 합성 대화방 중 사건 대화방의 비율을 낮춰 "합성처럼 보임"이 "사건 관련"의
+  # 단서가 되지 않게 한다. 돈 얘기와 거래가 섞인 평범한 대화 위주로 만든다.
+  - thread: t_d_bike
+    participants: [suspect, seller_bike]
+    roles:
+      suspect: {label: 구매자, desc: 출퇴근용 중고 자전거를 사려는 사람}
+      seller_bike: {label: 판매자, desc: 타던 자전거를 파는 평범한 판매자}
+    style: 처음 대화하는 사이의 존댓말, 평범한 중고거래
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-04T19:00
+        messages: 6-8
+        opener: suspect
+        intent: 구매자가 자전거 상태와 기어 고장 여부를 묻고, 토요일에 역 앞에서 직접 보고 사기로 약속함
+      - type: chat
+        at: 2026-03-07T13:50
+        messages: 2-4
+        opener: seller_bike
+        intent: 판매자가 도착했다고 하고 구매자가 출구 번호를 알려줌
+      - type: event
+        at: 2026-03-07T14:20
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-07T14:22
+        messages: 2-3
+        opener: seller_bike
+        intent: 판매자가 받았다며 잘 타라고 하고 구매자가 감사 인사를 함
+
+  - thread: t_d_book
+    participants: [suspect, seller_book]
+    roles:
+      suspect: {label: 구매자, desc: 자격증 수험서를 싸게 사려는 사람}
+      seller_book: {label: 판매자, desc: 다 본 수험서를 파는 평범한 판매자}
+    style: 존댓말, 평범한 택배 중고거래
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-05T21:10
+        messages: 6-8
+        opener: suspect
+        intent: 구매자가 필기 흔적이 있는지 묻고, 판매자가 사진을 보내며 택배비 포함 가격과 계좌(#@금융#)를 알려줌
+      - type: event
+        at: 2026-03-05T21:30
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-06T10:20
+        messages: 2-4
+        opener: seller_book
+        intent: 판매자가 편의점에서 부쳤다며 송장번호(#@번호#)를 보냄
+      - type: chat
+        at: 2026-03-08T18:40
+        messages: 2-3
+        opener: suspect
+        intent: 구매자가 책을 잘 받았다고 하고 판매자가 공부 잘하라고 답함
+
+  - thread: t_d_clothes
+    participants: [suspect, buyer_clothes]
+    roles:
+      suspect: {label: 판매자, desc: 안 입는 겨울 코트를 파는 사람. 약속대로 보낸다}
+      buyer_clothes: {label: 구매자, desc: 코트를 사려는 평범한 구매자}
+    style: 존댓말, 평범한 중고거래
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-09T20:30
+        messages: 6-8
+        opener: buyer_clothes
+        intent: 구매자가 코트 사이즈와 보풀을 묻고, 판매자가 답한 뒤 계좌(#@금융#)를 알려줌
+      - type: event
+        at: 2026-03-09T20:50
+        speaker: buyer_clothes
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-10T12:10
+        messages: 2-4
+        opener: suspect
+        intent: 판매자가 포장해서 보냈다며 송장번호(#@번호#)를 알려줌
+      - type: chat
+        at: 2026-03-12T19:30
+        messages: 2-3
+        opener: buyer_clothes
+        intent: 구매자가 받았는데 따뜻하고 좋다고 감사 인사를 함
+
+  - thread: t_d_club
+    participants: [suspect, club_treasurer]
+    roles:
+      suspect: {label: 회원, desc: 풋살 동호회 회원}
+      club_treasurer: {label: 총무, desc: 풋살 동호회 총무. 회비를 걷는다}
+    style: 동호회 회원끼리의 반말 섞인 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-02T22:00
+        messages: 4-6
+        opener: club_treasurer
+        intent: 총무가 이번 달 회비와 구장 대여비를 안내하며 계좌(#@금융#)를 보내고, 회원이 이번 주 안에 보내겠다고 함
+      - type: event
+        at: 2026-03-04T08:40
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-04T08:41
+        messages: 2-3
+        opener: suspect
+        intent: 회원이 보냈다고 하고 총무가 확인했다며 토요일 경기 시간을 알려줌
+      - type: chat
+        at: 2026-03-14T17:30
+        messages: 2-5
+        opener: club_treasurer
+        intent: 총무가 경기 끝나고 뒤풀이 장소를 정하자고 하고 회원이 의견을 냄
+
+  - thread: t_d_coworker
+    participants: [suspect, coworker]
+    roles:
+      suspect: {label: 동료1, desc: 카페 아르바이트생}
+      coworker: {label: 동료2, desc: 같은 카페에서 일하는 아르바이트 동료}
+    style: 친한 아르바이트 동료끼리 반말, 짧게 끊어 보내기
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-06T23:10
+        messages: 5-7
+        opener: coworker
+        intent: 동료2가 다음 주 화요일 근무를 바꿔줄 수 있냐고 묻고 동료1이 수요일과 바꾸자고 함
+      - type: chat
+        at: 2026-03-13T15:20
+        messages: 4-6
+        opener: suspect
+        intent: 동료1이 마감 때 재고 정리를 어디까지 했는지 묻고 동료2가 알려줌
+      - type: chat
+        at: 2026-03-24T21:40
+        messages: 2-5
+        opener: coworker
+        intent: 동료2가 이번 달 급여가 들어왔냐고 묻고 둘이 주휴수당 얘기를 함
+
+  - thread: t_d_landlord
+    participants: [suspect, landlord]
+    roles:
+      suspect: {label: 세입자, desc: 원룸에 사는 세입자}
+      landlord: {label: 집주인, desc: 원룸 건물 집주인}
+    style: 세입자는 공손한 존댓말, 집주인은 편한 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-01T11:00
+        messages: 4-5
+        opener: landlord
+        intent: 집주인이 이번 달 월세와 관리비 금액을 알려주고 세입자가 오늘 보내겠다고 함
+      - type: event
+        at: 2026-03-01T11:20
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-18T09:30
+        messages: 4-6
+        opener: suspect
+        intent: 세입자가 보일러에서 소리가 난다고 하고 집주인이 기사님을 목요일 오전에 보내겠다고 함
+
+  - thread: t_d_sibling
+    participants: [suspect, sibling]
+    roles:
+      suspect: {label: 형, desc: 동생과 부모님 선물을 준비하는 형}
+      sibling: {label: 동생, desc: 형과 부모님 결혼기념일 선물을 준비하는 동생}
+    style: 형제끼리 편한 반말, 짧게 끊어 보내기
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-10T22:30
+        messages: 5-7
+        opener: sibling
+        intent: 동생이 부모님 결혼기념일 선물로 무엇을 살지 묻고 둘이 안마기로 정한 뒤 동생이 먼저 사고 반을 달라고 함
+      - type: chat
+        at: 2026-03-12T20:10
+        messages: 2-3
+        opener: sibling
+        intent: 동생이 주문했다며 반값과 계좌(#@금융#)를 보냄
+      - type: event
+        at: 2026-03-12T20:20
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-21T19:00
+        messages: 2-4
+        opener: suspect
+        intent: 형이 부모님이 선물 좋아하셨냐고 묻고 동생이 사진을 보냈다고 함
+
+  - thread: t_d_travel
+    participants: [suspect, travel_friend]
+    roles:
+      suspect: {label: 친구1, desc: 친구와 강릉 여행을 계획하는 사람}
+      travel_friend: {label: 친구2, desc: 숙소 예약을 맡은 친구}
+    style: 친한 친구 반말, 짧게 끊어 보내기
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-03T21:00
+        messages: 6-8
+        opener: travel_friend
+        intent: 친구2가 다음 달 강릉 여행 날짜를 정하자며 숙소 링크(#@URL#) 하나를 보내고, 바다 보이는 곳이라 좋다며 둘이 거기로 정함
+      - type: chat
+        at: 2026-03-08T20:00
+        messages: 2-4
+        opener: travel_friend
+        intent: 친구2가 숙소 예약했다며 예약금 반을 계좌(#@금융#)로 보내달라고 함
+      - type: event
+        at: 2026-03-08T20:15
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-25T22:10
+        messages: 4-5
+        opener: suspect
+        intent: 친구1이 기차표를 언제 예매할지 묻고 둘이 출발 시간을 정함
+
+  - thread: t_d_trainer
+    participants: [suspect, trainer]
+    roles:
+      suspect: {label: 회원, desc: 헬스장 개인 트레이닝 회원}
+      trainer: {label: 트레이너, desc: 헬스장 트레이너}
+    style: 트레이너는 밝은 존댓말, 회원은 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-02T09:00
+        messages: 4-6
+        opener: trainer
+        intent: 트레이너가 이번 달 수업 일정을 잡자고 하고 회원이 화요일과 목요일 저녁이 좋다고 함
+      - type: chat
+        at: 2026-03-16T21:30
+        messages: 2-5
+        opener: trainer
+        intent: 트레이너가 10회 재등록 금액과 계좌(#@금융#)를 안내하고 회원이 이번 주에 하겠다고 함
+      - type: event
+        at: 2026-03-18T12:30
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-18T12:32
+        messages: 2-3
+        opener: suspect
+        intent: 회원이 보냈다고 하고 트레이너가 확인했다며 식단 잘 챙기라고 함
+
+  - thread: t_d_study
+    participants: [suspect, classmate]
+    roles:
+      suspect: {label: 스터디원1, desc: 정보처리기사 실기 스터디원}
+      classmate: {label: 스터디원2, desc: 같은 스터디원}
+    style: 스터디원끼리 편한 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-05T22:40
+        messages: 5-7
+        opener: classmate
+        intent: 스터디원2가 이번 주 공부 범위와 모임 장소를 정하자고 하고 둘이 카페로 정함
+      - type: chat
+        at: 2026-03-19T23:00
+        messages: 4-6
+        opener: suspect
+        intent: 스터디원1이 기출문제 풀다가 헷갈린 부분을 묻고 스터디원2가 설명해줌
+      - type: chat
+        at: 2026-03-29T20:30
+        messages: 2-4
+        opener: classmate
+        intent: 스터디원2가 스터디룸 대여비를 나누자며 금액을 말하고 스터디원1이 알겠다고 함
+
+  - thread: t_d_refund
+    participants: [suspect, craft_seller]
+    roles:
+      suspect: {label: 구매자, desc: 온라인 공방에서 머그컵을 산 사람}
+      craft_seller: {label: 판매자, desc: 수제 도자기 공방 운영자. 친절하게 환불해준다}
+    style: 서로 정중한 존댓말
+    decoy: true
+    # 구매자가 문제를 제기하고 돈을 돌려받는 흐름이 사기 피해자 대화와 겉모습이 닮은 정상 환불.
+    beats:
+      - type: chat
+        at: 2026-03-11T10:30
+        messages: 4-6
+        opener: suspect
+        intent: 구매자가 받은 머그컵에 금이 가 있다며 사진을 보냈다고 하고 판매자가 사과하며 환불해주겠다고 함
+      - type: chat
+        at: 2026-03-11T10:50
+        messages: 2-3
+        opener: craft_seller
+        intent: 판매자가 환불받을 계좌를 묻고 구매자가 계좌(#@금융#)를 알려줌
+      - type: event
+        at: 2026-03-11T14:10
+        speaker: craft_seller
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-11T14:12
+        messages: 2-3
+        opener: craft_seller
+        intent: 판매자가 환불해드렸다며 다시 한번 사과하고 구매자가 확인했다고 함
+
+  - thread: t_d_ticket
+    participants: [suspect, ticket_buyer]
+    roles:
+      suspect: {label: 양도자, desc: 못 가게 된 콘서트 티켓을 정가에 넘기는 사람}
+      ticket_buyer: {label: 양수자, desc: 티켓을 양도받는 사람}
+    style: 처음 대화하는 사이의 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-14T19:20
+        messages: 6-8
+        opener: ticket_buyer
+        intent: 양수자가 좌석 위치와 가격을 묻고 양도자가 정가에 넘기겠다며 계좌(#@금융#)를 알려줌
+      - type: event
+        at: 2026-03-14T19:40
+        speaker: ticket_buyer
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-14T19:42
+        messages: 2-4
+        opener: suspect
+        intent: 양도자가 입금 확인 후 예매처에서 티켓 양도를 보냈다고 하고 양수자가 받았다고 함
+      - type: chat
+        at: 2026-03-22T23:00
+        messages: 2-3
+        opener: ticket_buyer
+        intent: 양수자가 공연 잘 보고 왔다고 고맙다고 함
+
+  - thread: t_d_loan
+    participants: [suspect, borrower]
+    roles:
+      suspect: {label: 빌려준친구, desc: 친구에게 돈을 빌려준 사람}
+      borrower: {label: 빌린친구, desc: 월급날까지 돈을 빌린 친구}
+    style: 친한 친구 반말, 짧게 끊어 보내기
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-06T20:00
+        messages: 4-6
+        opener: borrower
+        intent: 빌린친구가 이번 달 카드값이 부족하다며 월급날까지 조금 빌려달라고 하고 빌려준친구가 알겠다고 함
+      - type: event
+        at: 2026-03-06T20:15
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-25T19:30
+        messages: 2-4
+        opener: borrower
+        intent: 빌린친구가 월급 들어왔다며 갚겠다고 하고 고맙다고 함
+      - type: event
+        at: 2026-03-25T19:40
+        speaker: borrower
+        literal: "#@시스템#송금#"
+
+  - thread: t_d_salon
+    participants: [suspect, salon]
+    roles:
+      suspect: {label: 손님, desc: 미용실 단골손님}
+      salon: {label: 원장, desc: 동네 미용실 원장}
+    style: 원장은 친근한 존댓말, 손님은 존댓말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-08T10:00
+        messages: 4-5
+        opener: suspect
+        intent: 손님이 이번 주 토요일 커트와 펌 예약이 되는지 묻고 원장이 오후 2시로 잡아줌
+      - type: chat
+        at: 2026-03-13T18:00
+        messages: 2-3
+        opener: salon
+        intent: 원장이 내일 예약을 확인하는 인사를 보내고 손님이 가겠다고 함
+      - type: chat
+        at: 2026-03-27T11:10
+        messages: 2-4
+        opener: salon
+        intent: 원장이 봄맞이 할인 행사를 안내하고 손님이 다음 달에 가겠다고 함
+
+  - thread: t_d_game
+    participants: [suspect, game_friend]
+    roles:
+      suspect: {label: 친구1, desc: 온라인 게임을 같이 하는 친구}
+      game_friend: {label: 친구2, desc: 온라인 게임 친구}
+    style: 게임 친구끼리 반말, 짧게 끊어 보내기, 줄임말
+    decoy: true
+    beats:
+      - type: chat
+        at: 2026-03-04T23:30
+        messages: 5-7
+        opener: game_friend
+        intent: 친구2가 오늘 밤 같이 게임 할 수 있냐고 하고 둘이 접속 시간을 맞춤
+      - type: chat
+        at: 2026-03-15T01:10
+        messages: 4-6
+        opener: suspect
+        intent: 친구1이 아까 판에서 진 이유를 얘기하고 둘이 다음엔 다른 캐릭터를 해보자고 함
+      - type: chat
+        at: 2026-03-28T22:20
+        messages: 2-5
+        opener: game_friend
+        intent: 친구2가 새 시즌 업데이트 소식을 얘기하고 주말에 같이 하자고 함
