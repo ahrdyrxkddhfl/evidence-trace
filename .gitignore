@@ -1,0 +1,13 @@
+# 원본·가공 데이터 (재배포 금지 데이터 포함)
+data/raw/
+data/processed/
+
+# 모델 가중치
+models/
+
+# 파이썬·환경
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
