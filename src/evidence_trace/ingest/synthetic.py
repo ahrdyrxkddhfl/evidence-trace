@@ -75,7 +75,13 @@ AI Hub 원본에서 확인된 표시 중 시스템 표시를 뺀 것이다. 시�
 (``#@시스템#송금#`` 등)는 코드만 ``say``/``event`` 장면으로 넣는다.
 """
 
+ONCE_PER_BEAT_MARKERS = frozenset({"#@금융#", "#@전번#", "#@주소#", "#@번호#", "#@URL#", "#@계정#"})
+"""frozenset[str]: 한 장면에서 한 번만 쓸 수 있는 정보 표시. 계좌를 세 번 연달아 보내는 식의
+부자연스러운 반복을 막는다."""
+
 _MARKER = re.compile(r"#@[^#\s]+#(?:[^#\s]+#)?")
+_LATIN_WORD = re.compile(r"[A-Za-z]{3,}")
+_UNNATURAL_SYMBOLS = re.compile("[₩$€]")
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
 _EMOJI_JOINERS = re.compile("[\uFE0F\u200D]")
 _SPLIT_POINT = re.compile(r"(?<=[.!?~,])\s+")
@@ -101,13 +107,17 @@ class Person:
 
     Attributes:
         id: 시나리오 안에서 쓰는 인물 식별자 (예: ``"victim_a"``).
-        role: 역할 설명. LLM 프롬프트에 인물 설명으로 들어간다.
+        role: 사건 전체에서의 역할 설명. 문서용이며, LLM에는 대화방별
+            역할(:attr:`Thread.roles`)을 보여준다.
         contact_name: 휴대폰 연락처에 저장된 이름. 기기 소유자는 ``None``.
+        name: 문서에서 부르는 이름 (예: 기기 소유자 ``"홍길동"``). 본문에
+            새어 나오면 안 되는 이름 검사에 함께 쓴다.
     """
 
     id: str
     role: str
     contact_name: str | None
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +137,8 @@ class Beat:
         literal: 지정되면 LLM 없이 이 문자열을 그대로 메시지로 쓴다.
         markers: 반드시 본문에 들어가야 하는 비식별화 표시.
         tags: 증거 분류 태그.
+        avoid: 본문에 쓰면 안 되는 단어. "뻔한 단어 없이 돌려 말하기" 같은
+            조건을 LLM에게 부탁만 하지 않고 검사기가 강제하게 한다.
     """
 
     index: int
@@ -139,6 +151,21 @@ class Beat:
     literal: str | None = None
     markers: tuple[str, ...] = ()
     tags: tuple[str, ...] = ()
+    avoid: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ThreadRole:
+    """대화방 안에서 한 인물이 맡는 역할.
+
+    Attributes:
+        label: LLM 출력의 발화자 이름으로 쓰는 역할 이름 (예: ``"판매자"``).
+            A/B 같은 기호보다 역할 이름을 줄 때 모델이 역할을 덜 헷갈린다.
+        description: 이 대화방에서의 역할 설명.
+    """
+
+    label: str
+    description: str
 
 
 @dataclass(frozen=True)
@@ -149,8 +176,10 @@ class Thread:
         id: 대화방 식별자 (예: ``"t_victim_a"``).
         participants: 참여 인물 ID들.
         style: 말투 지시문.
-        decoy: 사건과 무관한 오답 후보 대화방이면 True.
+        decoy: 사건과 무관한 오답 후보 대화방이면 True. 오답 후보에는 사건
+            개요를 보여주지 않아 평범한 대화가 수상하게 쓰이지 않게 한다.
         beats: 시각 순으로 정렬된 장면들.
+        roles: 인물 ID → 이 대화방에서의 역할.
     """
 
     id: str
@@ -158,6 +187,18 @@ class Thread:
     style: str
     decoy: bool
     beats: tuple[Beat, ...]
+    roles: dict[str, ThreadRole] = field(default_factory=dict)
+
+    def label_of(self, person_id: str) -> str:
+        """인물의 발화자 이름(역할 이름)을 돌려준다.
+
+        Args:
+            person_id: 인물 ID.
+
+        Returns:
+            역할 이름.
+        """
+        return self.roles[person_id].label
 
 
 @dataclass(frozen=True)
@@ -174,6 +215,21 @@ class Scenario:
         persons: 인물 ID → 인물.
         threads: 합성 대화방들.
     """
+
+    def forbidden_names(self) -> frozenset[str]:
+        """본문에 나오면 안 되는 인물 이름을 모은다.
+
+        연락처 이름과 문서용 이름 중, 어느 대화방의 역할 이름("엄마" 등
+        일상 호칭)과도 겹치지 않는 것만 포함한다. 실제 데이터에서 이름은
+        모두 ``#@이름#``으로 가려져 있으므로, 이름이 그대로 나오면 합성
+        메시지라는 단서가 된다.
+
+        Returns:
+            금지할 이름 집합.
+        """
+        labels = {role.label for t in self.threads for role in t.roles.values()}
+        names = {n for p in self.persons.values() for n in (p.contact_name, p.name) if n}
+        return frozenset(names - labels)
 
     id: str
     title: str
@@ -271,6 +327,9 @@ def load_scenario(path: Path) -> Scenario:
     * chat의 흐름 설명에 시스템 표시(``#@시스템#``)를 쓸 수 없다. LLM은
       시스템 표시를 쓰지 못하므로 모순된 지시가 되기 때문이다. 시스템
       메시지가 필요하면 event 장면으로 넣는다.
+    * 대화방의 ``roles``는 모든 참여자를 다뤄야 하고 역할 이름이 겹치면
+      안 된다. ``roles``가 없으면 연락처 이름(소유자는 "소유자")을 역할
+      이름으로 쓴다.
 
     기기 소유자는 ``owner`` 키로 지정한다. 없으면 ``contact_name``이
     비어 있는 유일한 인물을 소유자로 본다.
@@ -292,7 +351,9 @@ def load_scenario(path: Path) -> Scenario:
     end = _parse_at(f"{period['end']}T23:59", tz)
 
     persons = {
-        p["id"]: Person(id=p["id"], role=p["role"], contact_name=p.get("contact_name"))
+        p["id"]: Person(
+            id=p["id"], role=p["role"], contact_name=p.get("contact_name"), name=p.get("name")
+        )
         for p in data["persons"]
     }
     owner = data.get("owner")
@@ -312,6 +373,22 @@ def load_scenario(path: Path) -> Scenario:
         unknown = [p for p in participants if p not in persons]
         if unknown:
             raise ScenarioError(f"{thread_id}: 인물 목록에 없는 참여자 {unknown}")
+
+        raw_roles = raw_thread.get("roles") or {}
+        roles: dict[str, ThreadRole] = {}
+        for pid in participants:
+            spec = raw_roles.get(pid)
+            if spec is None:
+                if raw_roles:
+                    raise ScenarioError(f"{thread_id}: roles에 참여자 {pid}가 없습니다")
+                person = persons[pid]
+                roles[pid] = ThreadRole(person.contact_name or "소유자", person.role)
+            elif isinstance(spec, dict):
+                roles[pid] = ThreadRole(str(spec["label"]), str(spec.get("desc", "")))
+            else:
+                roles[pid] = ThreadRole(str(spec), persons[pid].role)
+        if len({r.label for r in roles.values()}) != len(roles):
+            raise ScenarioError(f"{thread_id}: 역할 이름이 겹칩니다")
 
         beats: list[Beat] = []
         for index, raw in enumerate(raw_thread["beats"]):
@@ -366,6 +443,7 @@ def load_scenario(path: Path) -> Scenario:
                     literal=raw.get("literal"),
                     markers=tuple(raw.get("markers", ())),
                     tags=tuple(raw.get("tags", ())),
+                    avoid=tuple(raw.get("avoid", ())),
                 )
             )
 
@@ -376,6 +454,7 @@ def load_scenario(path: Path) -> Scenario:
                 style=raw_thread.get("style", ""),
                 decoy=bool(raw_thread.get("decoy", False)),
                 beats=tuple(beats),
+                roles=roles,
             )
         )
 
@@ -404,13 +483,14 @@ class ChatModel(Protocol):
 
     name: str
 
-    def complete(self, system: str, user: str, seed: int) -> str:
+    def complete(self, system: str, user: str, seed: int, schema: dict[str, Any] | None = None) -> str:
         """프롬프트에 대한 응답 문자열을 돌려준다.
 
         Args:
             system: 시스템 프롬프트.
             user: 사용자 프롬프트.
             seed: 재현성을 위한 난수 시드.
+            schema: 응답에 강제할 JSON 스키마. None이면 기본 스키마.
 
         Returns:
             모델 응답 본문.
@@ -437,13 +517,14 @@ class OllamaChatModel:
     temperature: float = 0.9
     timeout: float = 300.0
 
-    def complete(self, system: str, user: str, seed: int) -> str:
+    def complete(self, system: str, user: str, seed: int, schema: dict[str, Any] | None = None) -> str:
         """Ollama에 요청을 보내고 응답 본문을 돌려준다.
 
         Args:
             system: 시스템 프롬프트.
             user: 사용자 프롬프트.
             seed: 난수 시드.
+            schema: 응답에 강제할 JSON 스키마. None이면 :data:`OUTPUT_SCHEMA`.
 
         Returns:
             모델이 생성한 JSON 문자열.
@@ -454,7 +535,7 @@ class OllamaChatModel:
         payload = {
             "model": self.name,
             "stream": False,
-            "format": OUTPUT_SCHEMA,
+            "format": schema or OUTPUT_SCHEMA,
             "options": {"temperature": self.temperature, "seed": seed},
             "messages": [
                 {"role": "system", "content": system},
@@ -497,7 +578,25 @@ OUTPUT_SCHEMA: dict[str, Any] = {
     },
     "required": ["messages"],
 }
-"""dict: LLM 출력에 강제하는 JSON 스키마."""
+"""dict: LLM 출력에 강제하는 기본 JSON 스키마."""
+
+
+def build_output_schema(labels: Iterable[str]) -> dict[str, Any]:
+    """발화자를 주어진 역할 이름으로만 제한한 JSON 스키마를 만든다.
+
+    Args:
+        labels: 이 장면에서 말할 수 있는 역할 이름들.
+
+    Returns:
+        ``speaker``가 ``labels`` 중 하나로 제한된 스키마.
+
+    Example:
+        >>> build_output_schema(["판매자"])["properties"]["messages"]["items"]["properties"]["speaker"]
+        {'type': 'string', 'enum': ['판매자']}
+    """
+    schema = json.loads(json.dumps(OUTPUT_SCHEMA))
+    schema["properties"]["messages"]["items"]["properties"]["speaker"]["enum"] = sorted(labels)
+    return schema
 
 
 # ---------------------------------------------------------------------------
@@ -573,9 +672,11 @@ SYSTEM_PROMPT = """\
 2. 사람 이름은 #@이름#, 계좌번호는 #@금융#, 전화번호는 #@전번#, 주소는 #@주소#, 링크는 #@URL#,
    송장번호 같은 그 밖의 번호는 #@번호#로 쓴다.
    이모티콘은 이모지 대신 #@이모티콘#으로 쓴다.
-3. '#@시스템#'으로 시작하는 표시는 절대 쓰지 않는다.
-4. 매 메시지마다 상대 이름을 부르지 않는다.
-5. 출력은 {"messages": [{"speaker": "A", "text": "..."}]} 형식의 JSON만 쓴다.\
+3. '#@시스템#'으로 시작하는 표시는 절대 쓰지 않는다. 위에 나온 표시 말고 다른 '#' 표시를 만들지 않는다.
+4. 매 메시지마다 상대 이름을 부르지 않는다. 계좌 같은 정보는 한 번만 보낸다.
+5. 영어 단어와 통화 기호(₩ 등)를 쓰지 않는다.
+6. speaker에는 [등장인물]에 나온 역할 이름을 그대로 쓰고, 각 역할의 입장을 끝까지 지킨다.
+7. 출력은 {"messages": [{"speaker": "역할 이름", "text": "..."}]} 형식의 JSON만 쓴다.\
 """
 """str: 모든 생성 요청에 공통으로 쓰는 시스템 프롬프트."""
 
@@ -598,29 +699,30 @@ def build_user_prompt(
     beat: Beat,
     history: list[tuple[str, str]],
     examples: list[list[tuple[str, str]]],
-    labels: dict[str, str],
 ) -> str:
     """장면 하나를 생성하기 위한 사용자 프롬프트를 만든다.
 
+    오답 후보 대화방에는 사건 개요를 넣지 않는다. 평범한 대화가 사건을
+    의식해 수상하게 쓰이는 것을 막기 위해서다.
+
     Args:
-        scenario: 사건 시나리오. 개요를 배경으로 쓴다.
-        thread: 장면이 속한 대화방.
+        scenario: 사건 시나리오.
+        thread: 장면이 속한 대화방. 역할 이름과 설명을 쓴다.
         beat: 생성할 장면.
-        history: 이 대화방에서 지금까지 생성된 (라벨, 본문) 목록.
+        history: 이 대화방에서 지금까지 생성된 (역할 이름, 본문) 목록.
         examples: 말투 예시로 보여줄 실제 대화들.
-        labels: 인물 ID → 발화자 라벨(A, B, ...).
 
     Returns:
         LLM에 보낼 사용자 프롬프트.
     """
     people = "\n".join(
-        f"- {labels[pid]}: {scenario.persons[pid].role}" for pid in thread.participants
+        f"- {thread.roles[pid].label}: {thread.roles[pid].description}" for pid in thread.participants
     )
     shown = "\n\n".join(f"[예시 {i + 1}]\n{_format_dialogue(d)}" for i, d in enumerate(examples))
     recent = _format_dialogue(history[-12:]) if history else "(대화 시작)"
     low, high = beat.message_range
     count = f"{low}개" if low == high else f"{low}~{high}개"
-    speakers = ", ".join(labels[s] for s in beat.speakers)
+    speakers = ", ".join(thread.label_of(s) for s in beat.speakers)
 
     if beat.type == "say":
         task = (
@@ -628,13 +730,16 @@ def build_user_prompt(
             f"여러 개로 끊어 보내도 된다.\n전달할 내용: {beat.text}"
         )
         if beat.markers:
-            task += f"\n반드시 포함할 표시: {', '.join(beat.markers)}"
+            task += f"\n반드시 포함할 표시(한 번만): {', '.join(beat.markers)}"
     else:
         task = f"다음 흐름의 대화를 메시지 {count}로 써라. 말하는 사람: {speakers}\n흐름: {beat.text}"
+    if beat.avoid:
+        task += f"\n절대 쓰면 안 되는 단어: {', '.join(beat.avoid)}"
+    background = "평범한 일상 대화다." if thread.decoy else scenario.summary
 
     return (
         f"[실제 대화 예시 — 말투만 참고하고 내용은 베끼지 마라]\n{shown}\n\n"
-        f"[사건 배경]\n{scenario.summary}\n\n"
+        f"[배경]\n{background}\n\n"
         f"[등장인물]\n{people}\n\n"
         f"[말투]\n{thread.style}\n\n"
         f"[지금까지의 대화]\n{recent}\n\n"
@@ -725,6 +830,7 @@ def validate_messages(
     allowed_labels: set[str],
     fewshot_lines: set[str],
     check_count: bool = True,
+    forbidden_names: frozenset[str] = frozenset(),
 ) -> list[str]:
     """메시지들이 규칙을 지켰는지 검사한다.
 
@@ -736,6 +842,7 @@ def validate_messages(
         check_count: True이면 메시지 수가 장면의 범위 안인지 확인한다.
             후처리로 쪼갠 뒤에는 개수가 늘어나므로, 개수 검사는 LLM 원본에
             대해서만 하고 후처리 결과에는 False로 부른다.
+        forbidden_names: 본문에 나오면 안 되는 인물 이름.
 
     Returns:
         위반 사유 목록. 비어 있으면 합격이다.
@@ -765,11 +872,25 @@ def validate_messages(
             problems.append(f"{where}: {len(text)}자 (최대 {MAX_MESSAGE_CHARS}자)")
         if _EMOJI.search(text):
             emoji_messages += 1
-        for marker in _MARKER.findall(text):
+        markers = _MARKER.findall(text)
+        for marker in markers:
             if marker.startswith("#@시스템#"):
                 problems.append(f"{where}: 시스템 표시 사용 {marker}")
             elif marker not in ALLOWED_TEXT_MARKERS and not marker.startswith("#@이모티콘#"):
                 problems.append(f"{where}: 알 수 없는 표시 {marker}")
+        bare = _MARKER.sub(" ", text)
+        if "#" in bare:
+            problems.append(f"{where}: 형식이 잘못된 '#' 표시")
+        if _LATIN_WORD.search(bare):
+            problems.append(f"{where}: 영어 단어 {_LATIN_WORD.search(bare).group()!r}")
+        if _UNNATURAL_SYMBOLS.search(bare):
+            problems.append(f"{where}: 통화 기호 사용")
+        for name in forbidden_names:
+            if name in bare:
+                problems.append(f"{where}: 가려야 할 이름 노출 {name!r}")
+        for word in beat.avoid:
+            if word in bare:
+                problems.append(f"{where}: 금지어 {word!r} 사용")
         if len(text) >= 6 and text in fewshot_lines:
             problems.append(f"{where}: 예시 문장을 그대로 베낌")
 
@@ -780,6 +901,9 @@ def validate_messages(
     for marker in beat.markers:
         if marker not in joined:
             problems.append(f"필수 표시 {marker} 누락")
+    for marker in ONCE_PER_BEAT_MARKERS:
+        if joined.count(marker) > 1:
+            problems.append(f"{marker} {joined.count(marker)}회 반복 (장면당 1회)")
     return problems
 
 
@@ -916,6 +1040,7 @@ def generate(
     rng = random.Random(seed)
     report = progress or (lambda _message: None)
     total_beats = sum(len(t.beats) for t in scenario.threads)
+    forbidden = scenario.forbidden_names()
     done = 0
     records: list[EvidenceRecord] = []
     evidence: dict[str, Any] = {}
@@ -924,8 +1049,7 @@ def generate(
     log: list[dict[str, Any]] = []
 
     for thread in scenario.threads:
-        labels = {pid: _SPEAKER_LABELS[i] for i, pid in enumerate(thread.participants)}
-        by_label = {v: k for k, v in labels.items()}
+        by_label = {thread.label_of(pid): pid for pid in thread.participants}
         thread_key = f"{DATASET_NAME}:{scenario.id}:{thread.id}"
         history: list[tuple[str, str]] = []
         thread_record_ids: list[str] = []
@@ -938,22 +1062,23 @@ def generate(
             following = thread.beats[position + 1].at if position + 1 < len(thread.beats) else None
 
             if beat.literal is not None:
-                messages = [{"speaker": labels[beat.speakers[0]], "text": beat.literal}]
+                messages = [{"speaker": thread.label_of(beat.speakers[0]), "text": beat.literal}]
                 log.append({"thread": thread.id, "beat": beat.index, "attempt": 0, "ok": True,
                             "problems": [], "literal": True})
                 report(f"{where}: 고정 문구")
             else:
-                allowed = {labels[s] for s in beat.speakers}
+                allowed = {thread.label_of(s) for s in beat.speakers}
+                schema = build_output_schema(allowed)
                 problems: list[str] = []
                 messages = []
                 for attempt in range(1, max_attempts + 1):
                     prompt = build_user_prompt(
-                        scenario, thread, beat, history,
-                        fewshot.sample(rng, examples_per_prompt), labels,
+                        scenario, thread, beat, history, fewshot.sample(rng, examples_per_prompt)
                     )
                     raw = model.complete(
                         SYSTEM_PROMPT, prompt,
                         _beat_seed(seed, scenario.id, thread.id, beat.index, attempt),
+                        schema,
                     )
                     fixes = {"split": 0, "emoji_removed": 0}
                     try:
@@ -962,7 +1087,8 @@ def generate(
                         if low <= len(raw_messages) <= high:
                             messages, fixes = normalize_messages(raw_messages)
                             problems = validate_messages(
-                                messages, beat, allowed, fewshot.lines, check_count=False
+                                messages, beat, allowed, fewshot.lines, check_count=False,
+                                forbidden_names=forbidden,
                             )
                         else:
                             problems = [f"메시지 수 {len(raw_messages)}개 (허용 {low}~{high})"]

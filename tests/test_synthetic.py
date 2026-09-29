@@ -36,12 +36,15 @@ timezone: "+09:00"
 period: {start: 2026-03-01, end: 2026-03-31}
 summary: 테스트용 사건.
 persons:
-  - {id: suspect, role: 피의자, contact_name: null}
+  - {id: suspect, name: 홍길동, role: 피의자, contact_name: null}
   - {id: victim, role: 피해자, contact_name: 성춘향}
   - {id: friend, role: 친구, contact_name: 흥부}
 threads:
   - thread: t_victim
     participants: [suspect, victim]
+    roles:
+      suspect: {label: 판매자, desc: 사기 판매자}
+      victim: {label: 구매자, desc: 구매자}
     style: 존댓말
     beats:
       - {type: chat, at: "2026-03-03T19:10", messages: 2-3, intent: 물건 문의}
@@ -56,6 +59,9 @@ threads:
          must_convey: 송금, literal: "#@시스템#송금#"}
   - thread: t_friend
     participants: [suspect, friend]
+    roles:
+      suspect: {label: 얻어먹은친구, desc: 친구}
+      friend: {label: 계산한친구, desc: 친구}
     style: 반말
     decoy: true
     beats:
@@ -83,19 +89,22 @@ class FakeModel:
         """
         self.responses = list(responses)
         self.calls: list[str] = []
+        self.schemas: list[dict | None] = []
 
-    def complete(self, system: str, user: str, seed: int) -> str:
+    def complete(self, system: str, user: str, seed: int, schema: dict | None = None) -> str:
         """다음 응답을 돌려준다.
 
         Args:
             system: 시스템 프롬프트 (사용하지 않음).
-            user: 사용자 프롬프트. 기록만 한다.
+            user: 사용자 프롬프트. 기록한다.
             seed: 시드 (사용하지 않음).
+            schema: 응답 스키마. 기록한다.
 
         Returns:
             미리 정한 다음 응답.
         """
         self.calls.append(user)
+        self.schemas.append(schema)
         return self.responses.pop(0)
 
 
@@ -105,9 +114,9 @@ def _reply(*pairs: tuple[str, str]) -> str:
 
 
 GOOD = [
-    _reply(("B", "안녕하세요 아직 있나요"), ("A", "네 있어요")),            # t_victim chat
-    _reply(("A", "직거래는 어렵고요"), ("A", "여기로 먼저 #@금융#")),       # E01 say
-    _reply(("A", "밥값 얼마더라"), ("B", "#@금융# 여기로 ㄱ")),             # t_friend chat
+    _reply(("구매자", "안녕하세요 아직 있나요"), ("판매자", "네 있어요")),            # t_victim chat
+    _reply(("판매자", "직거래는 어렵고요"), ("판매자", "여기로 먼저 #@금융#")),       # E01 say
+    _reply(("얻어먹은친구", "밥값 얼마더라"), ("계산한친구", "#@금융# 여기로 ㄱ")),   # t_friend chat
 ]
 
 
@@ -153,7 +162,7 @@ def test_records_do_not_leak_answers(scenario_path: Path, pool: FewShotPool) -> 
 
 def test_invalid_output_is_retried_then_accepted(scenario_path: Path, pool: FewShotPool) -> None:
     """검사기에 걸린 출력은 버리고 다시 생성한다."""
-    bad = _reply(("A", "여기로 입금 #@시스템#송금#"))
+    bad = _reply(("판매자", "여기로 입금 #@시스템#송금#"))
     model = FakeModel([GOOD[0], bad, GOOD[1], GOOD[2]])
     result = generate(load_scenario(scenario_path), model, pool)
     rejected = [e for e in result.log if not e["ok"]]
@@ -163,7 +172,7 @@ def test_invalid_output_is_retried_then_accepted(scenario_path: Path, pool: FewS
 
 def test_generation_fails_loudly_after_max_attempts(scenario_path: Path, pool: FewShotPool) -> None:
     """한도까지 불합격이면 조용히 넘어가지 않고 예외를 던진다."""
-    bad = _reply(("A", "x" * 41))
+    bad = _reply(("판매자", "가" * 41))
     with pytest.raises(GenerationError, match="t_victim 장면 0"):
         generate(load_scenario(scenario_path), FakeModel([bad] * 4), pool, max_attempts=4)
 
@@ -207,7 +216,8 @@ BEAT = Beat(0, "say", datetime(2026, 3, 3, 19, 20, tzinfo=KST), ("suspect",), "�
         ([{"speaker": "A", "text": "#@금융# #@비밀#"}], ["알 수 없는 표시"]),
         ([{"speaker": "A", "text": "#@금융# #@이모티콘#흑흑#"}], []),
         ([{"speaker": "A", "text": "실제 대화 예시 문장"}, {"speaker": "A", "text": "#@금융#"}], ["베낌"]),
-        ([{"speaker": "A", "text": f"#@금융# {i}"} for i in range(4)], ["메시지 수"]),
+        ([{"speaker": "A", "text": "#@금융#"}] + [{"speaker": "A", "text": f"네 {i}"} for i in range(3)],
+         ["메시지 수"]),
     ],
 )
 def test_validate_messages(messages: list[dict[str, str]], expected: list[str]) -> None:
@@ -293,8 +303,8 @@ def test_normalize_removes_emoji_and_drops_empty() -> None:
 def test_long_emoji_output_is_fixed_not_rejected(scenario_path: Path, pool: FewShotPool) -> None:
     """EXAONE처럼 긴 존댓말에 이모지를 붙인 출력도 후처리로 합격한다."""
     long_reply = _reply(
-        ("B", "안녕하세요! 중고거래 앱에서 판매글 보고 연락드렸어요. 혹시 아직 판매 중이신가요? 😊"),
-        ("A", "네 아직 있어요! 상태 아주 좋고 구성품도 전부 다 있습니다. 🙂"),
+        ("구매자", "안녕하세요! 중고거래 앱에서 판매글 보고 연락드렸어요. 혹시 아직 판매 중이신가요? 😊"),
+        ("판매자", "네 아직 있어요! 상태 아주 좋고 구성품도 전부 다 있습니다. 🙂"),
     )
     model = FakeModel([long_reply, GOOD[1], GOOD[2]])
     result = generate(load_scenario(scenario_path), model, pool)
@@ -305,7 +315,7 @@ def test_long_emoji_output_is_fixed_not_rejected(scenario_path: Path, pool: FewS
 
 def test_count_is_checked_on_raw_llm_output(scenario_path: Path, pool: FewShotPool) -> None:
     """메시지 수는 쪼개기 전 LLM 원본으로 판단한다."""
-    too_many = _reply(*[("A", "네") for _ in range(4)])  # 첫 장면 허용 2~3개
+    too_many = _reply(*[("판매자", "네") for _ in range(4)])  # 첫 장면 허용 2~3개
     model = FakeModel([too_many, GOOD[0], GOOD[1], GOOD[2]])
     result = generate(load_scenario(scenario_path), model, pool)
     assert "메시지 수 4개" in result.log[0]["problems"][0]
@@ -352,4 +362,84 @@ def test_event_requires_literal(tmp_path: Path) -> None:
 def test_other_real_markers_are_allowed() -> None:
     """AI Hub 원본에 있는 #@번호# 같은 표시는 허용한다."""
     beat = Beat(0, "chat", datetime(2026, 3, 3, 10, 0, tzinfo=KST), ("a",), "송장", (1, 2))
-    assert validate_messages([{"speaker": "A", "text": "송장 #@번호# 이에요"}], beat, {"A"}, set()) == []
+    assert validate_messages([{"speaker": "나", "text": "송장 #@번호# 이에요"}], beat, {"나"}, set()) == []
+
+
+# ---------- 역할 이름과 강화된 검사 ----------
+
+def test_speaker_is_constrained_to_role_labels(scenario_path: Path, pool: FewShotPool) -> None:
+    """LLM 응답 스키마의 발화자가 그 장면의 역할 이름으로 제한된다."""
+    model = FakeModel(GOOD)
+    generate(load_scenario(scenario_path), model, pool)
+    say_schema = model.schemas[1]
+    speaker = say_schema["properties"]["messages"]["items"]["properties"]["speaker"]
+    assert speaker["enum"] == ["판매자"]
+    assert "- 판매자: 사기 판매자" in model.calls[0]
+
+
+def test_decoy_prompt_hides_case_summary(scenario_path: Path, pool: FewShotPool) -> None:
+    """오답 후보 대화방 프롬프트에는 사건 개요가 들어가지 않는다."""
+    model = FakeModel(GOOD)
+    generate(load_scenario(scenario_path), model, pool)
+    assert "테스트용 사건." in model.calls[0]
+    assert "테스트용 사건." not in model.calls[2]
+
+
+def test_roles_must_cover_all_participants(tmp_path: Path) -> None:
+    """roles가 참여자를 빠뜨리면 거부한다."""
+    path = tmp_path / "bad.yaml"
+    path.write_text(SCENARIO_YAML.replace("      victim: {label: 구매자, desc: 구매자}\n", ""),
+                    encoding="utf-8")
+    with pytest.raises(ScenarioError, match="roles에 참여자 victim"):
+        load_scenario(path)
+
+
+def test_role_labels_must_be_unique(tmp_path: Path) -> None:
+    """한 대화방에서 역할 이름이 겹치면 거부한다."""
+    path = tmp_path / "bad.yaml"
+    path.write_text(SCENARIO_YAML.replace("{label: 구매자, desc: 구매자}", "{label: 판매자, desc: 구매자}"),
+                    encoding="utf-8")
+    with pytest.raises(ScenarioError, match="역할 이름이 겹칩니다"):
+        load_scenario(path)
+
+
+def test_forbidden_names_exclude_role_labels(scenario_path: Path) -> None:
+    """연락처·문서용 이름은 금지하되 역할 이름과 겹치는 호칭은 빼준다."""
+    assert load_scenario(scenario_path).forbidden_names() == frozenset({"홍길동", "성춘향", "흥부"})
+
+
+AVOID_BEAT = Beat(0, "say", datetime(2026, 3, 1, 21, 52, tzinfo=KST), ("suspect",), "돌려 말하기", (1, 3),
+                  evidence_id="E01", avoid=("계좌", "통장"))
+
+
+@pytest.mark.parametrize(
+    ("text", "keyword"),
+    [
+        ("잠깐 계좌 좀 빌려줘", "금지어 '계좌'"),
+        ("#전화번호#로 연락해", "형식이 잘못된 '#'"),
+        ("#내일 오후 3시?", "형식이 잘못된 '#'"),
+        ("hurry up 빨리요", "영어 단어"),
+        ("₩150만원이에요", "통화 기호"),
+        ("성춘향님 감사해요", "이름 노출"),
+    ],
+)
+def test_validator_catches_review_findings(text: str, keyword: str) -> None:
+    """1차 검수에서 사람이 찾은 문제를 이제 검사기가 잡는다."""
+    problems = validate_messages([{"speaker": "판매자", "text": text}], AVOID_BEAT, {"판매자"}, set(),
+                                 forbidden_names=frozenset({"성춘향"}))
+    assert any(keyword in p for p in problems), problems
+
+
+def test_marker_repeated_in_beat_is_rejected() -> None:
+    """계좌 표시를 한 장면에서 여러 번 보내면 반려한다."""
+    beat = Beat(0, "say", datetime(2026, 3, 11, 20, 30, tzinfo=KST), ("suspect",), "입금 요청", (1, 3),
+                evidence_id="E12", markers=("#@금융#",))
+    messages = [{"speaker": "판매자", "text": "#@금융# 여기로요"}, {"speaker": "판매자", "text": "#@금융# 확인요"}]
+    assert any("2회 반복" in p for p in validate_messages(messages, beat, {"판매자"}, set()))
+
+
+def test_valid_markers_are_not_flagged_as_stray() -> None:
+    """올바른 표시와 URL 표시는 '#' 오류나 영어 단어로 오인하지 않는다."""
+    beat = Beat(0, "chat", datetime(2026, 3, 3, 10, 0, tzinfo=KST), ("a",), "송장", (1, 2))
+    text = "#@URL# 여기 #@이모티콘#흑흑# PS5 ok"
+    assert validate_messages([{"speaker": "나", "text": text}], beat, {"나"}, set()) == []
