@@ -263,35 +263,68 @@ threads:
         tags: [피해자C, 피해인지]
 
   # ---------- 헷갈리게 만드는 장치: 사건과 무관한 돈 얘기 ----------
+  # 송금 알림은 LLM이 아니라 코드가 event 장면으로 넣는다.
   - thread: t_friend
     participants: [suspect, friend]
-    style: 친한 친구 반말
+    style: 친한 친구 반말, 짧게 끊어 보내기
     decoy: true
     beats:
       - type: chat
         at: 2026-03-07T22:10
-        messages: 8-10
-        intent: 저녁 먹은 뒤 더치페이 금액 정산, 친구가 계좌를 묻고 피의자가 송금 (#@금융#, #@시스템#송금# 사용)
+        messages: 5-7
+        intent: 친구가 오늘 저녁을 자기가 계산했다며 반씩 나누자고 하고 자기 계좌(#@금융#)를 보냄
+      - type: event
+        at: 2026-03-07T22:25
+        speaker: suspect
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-07T22:27
+        messages: 3-4
+        intent: 친구가 돈 들어온 걸 확인하고 다음에 또 보자고 함
 
   - thread: t_mother
     participants: [suspect, mother]
-    style: 어머니와 자녀, 어머니는 띄어쓰기와 이모티콘이 독특함
+    style: 어머니와 자녀, 어머니는 띄어쓰기가 독특하고 말끝에 물결을 자주 씀
     decoy: true
     beats:
       - type: chat
         at: 2026-03-15T12:30
-        messages: 6-8
-        intent: 어머니가 용돈을 보냈다고 알리고 밥 잘 챙겨 먹으라고 함 (#@시스템#송금# 사용)
+        messages: 4-6
+        intent: 어머니가 이번 달 용돈을 보내겠다고 하고 밥 잘 챙겨 먹으라고 잔소리함
+      - type: event
+        at: 2026-03-15T12:45
+        speaker: mother
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-15T12:47
+        messages: 3-4
+        intent: 자녀가 고맙다고 하고 주말에 전화하겠다고 함
 
   - thread: t_buyer_legit
     participants: [suspect, buyer_legit]
     style: 존댓말, 평범한 중고거래
     decoy: true
+    # 사건 전에 피의자가 실제로 물건을 팔고 정상 배송한 거래.
+    # 선입금 → 송금 → 발송 약속까지 사기 대화와 구조가 같고 이후 실제로 배송된다.
+    # 사기 증거와 표면이 가장 비슷한 오답 후보.
     beats:
       - type: chat
         at: 2026-03-02T18:00
-        messages: 10-12
-        intent: >
-          사건 전에 피의자가 실제로 물건을 팔고 정상 배송한 거래. 선입금, 계좌 전달,
-          송금 알림까지는 사기와 겉모습이 같지만 송장번호를 주고 구매자가 잘 받았다고 인사함.
-          사기 증거와 표면이 가장 비슷한 오답 후보.
+        messages: 8-10
+        intent: 구매자가 무선 이어폰 상태를 묻고, 택배 거래로 합의한 뒤 판매자가 선입금 계좌(#@금융#)를 알려줌
+      - type: event
+        at: 2026-03-02T18:30
+        speaker: buyer_legit
+        literal: "#@시스템#송금#"
+      - type: chat
+        at: 2026-03-02T18:35
+        messages: 3-4
+        intent: 판매자가 입금을 확인하고 내일 오전에 발송하겠다고 함
+      - type: chat
+        at: 2026-03-03T10:00
+        messages: 4-6
+        intent: 판매자가 발송했다며 송장번호(#@번호#)를 보내고 구매자가 확인함
+      - type: chat
+        at: 2026-03-04T20:00
+        messages: 3-4
+        intent: 구매자가 물건을 잘 받았다고 감사 인사를 하고 판매자가 잘 쓰라고 답함

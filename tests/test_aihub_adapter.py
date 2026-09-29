@@ -148,3 +148,10 @@ def test_cli_writes_verifiable_jsonl(dataset: Path, tmp_path: Path) -> None:
 def test_missing_root_fails_cleanly(tmp_path: Path) -> None:
     """없는 폴더를 주면 예외 대신 종료 코드 1을 돌려준다."""
     assert main([str(tmp_path / "nope"), str(tmp_path / "out.jsonl")]) == 1
+
+
+def test_max_per_file_samples_every_topic(dataset: Path) -> None:
+    """파일(주제)마다 정해진 수만큼 뽑아 한 주제에 쏠리지 않는다."""
+    records = list(iter_records(dataset, max_per_file=1))
+    files = {r.source_ref["file"] for r in records}
+    assert len(files) == 2

@@ -38,6 +38,12 @@ Example:
         $ python -m evidence_trace.ingest.aihub_adapter \\
             data/raw/aihub_sns/extracted/valid \\
             data/processed/aihub_valid_sample.jsonl --max-dialogues 1000
+
+    주제마다 200개씩 층화 표본을 만든다::
+
+        $ python -m evidence_trace.ingest.aihub_adapter \\
+            data/raw/aihub_sns/extracted/valid \\
+            data/processed/aihub_valid_stratified.jsonl --max-per-file 200
 """
 
 from __future__ import annotations
@@ -245,16 +251,20 @@ def iter_records(
     root: Path,
     max_dialogues: int | None = None,
     stats: AdapterStats | None = None,
+    max_per_file: int | None = None,
 ) -> Iterator[EvidenceRecord]:
     """데이터셋 폴더 아래 모든 JSON 파일의 레코드를 차례로 생성한다.
 
     파일은 NFC로 정규화한 상대 경로 순으로 처리해 실행할 때마다 순서가
-    같다. macOS의 NFD 파일명과 섞여도 결과가 바뀌지 않는다.
+    같다. macOS의 NFD 파일명과 섞여도 결과가 바뀌지 않는다. AI Hub는
+    주제별로 파일이 나뉘어 있으므로 ``max_per_file``을 주면 주제마다
+    같은 수의 대화를 뽑는 층화 표본이 된다.
 
     Args:
         root: 압축을 푼 데이터셋 폴더 (예: ``.../extracted/valid``).
-        max_dialogues: 처리할 최대 대화 수. None이면 전부 처리한다.
+        max_dialogues: 전체에서 처리할 최대 대화 수. None이면 제한 없음.
         stats: 집계를 기록할 통계 객체. None이면 기록하지 않는다.
+        max_per_file: 파일(주제)마다 처리할 최대 대화 수. None이면 제한 없음.
 
     Yields:
         변환된 증거 레코드.
@@ -274,10 +284,14 @@ def iter_records(
 
     seen = 0
     for rel_path, path in files:
+        in_file = 0
         for dialogue in iter_dialogues(path):
             if max_dialogues is not None and seen >= max_dialogues:
                 return
+            if max_per_file is not None and in_file >= max_per_file:
+                break
             seen += 1
+            in_file += 1
             records = dialogue_to_records(dialogue, rel_path, stats)
             if stats is not None:
                 stats.dialogues += 1
@@ -317,11 +331,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("root", type=Path, help="압축을 푼 데이터셋 폴더")
     parser.add_argument("out", type=Path, help="저장할 JSONL 경로")
     parser.add_argument("--max-dialogues", type=int, default=None, help="처리할 최대 대화 수")
+    parser.add_argument(
+        "--max-per-file", type=int, default=None, help="파일(주제)마다 처리할 최대 대화 수"
+    )
     args = parser.parse_args(argv)
 
     stats = AdapterStats()
     try:
-        written = write_jsonl(iter_records(args.root, args.max_dialogues, stats), args.out)
+        records = iter_records(args.root, args.max_dialogues, stats, args.max_per_file)
+        written = write_jsonl(records, args.out)
     except FileNotFoundError as exc:
         print(f"오류: {exc}", file=sys.stderr)
         return 1
