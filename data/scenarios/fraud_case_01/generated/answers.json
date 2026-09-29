@@ -4,9 +4,11 @@
   "evidence": {
     "E07": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_a:0012",
-        "synthetic:fraud_case_01:t_victim_a:0013",
-        "synthetic:fraud_case_01:t_victim_a:0014"
+        "synthetic:fraud_case_01:t_victim_a:0019",
+        "synthetic:fraud_case_01:t_victim_a:0020",
+        "synthetic:fraud_case_01:t_victim_a:0021",
+        "synthetic:fraud_case_01:t_victim_a:0022",
+        "synthetic:fraud_case_01:t_victim_a:0023"
       ],
       "thread": "t_victim_a",
       "must_convey": "다른 사람도 문의 중이라 빨리 결정해야 한다고 구매자를 재촉함",
@@ -17,9 +19,10 @@
     },
     "E08": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_a:0015",
-        "synthetic:fraud_case_01:t_victim_a:0016",
-        "synthetic:fraud_case_01:t_victim_a:0017"
+        "synthetic:fraud_case_01:t_victim_a:0024",
+        "synthetic:fraud_case_01:t_victim_a:0025",
+        "synthetic:fraud_case_01:t_victim_a:0026",
+        "synthetic:fraud_case_01:t_victim_a:0027"
       ],
       "thread": "t_victim_a",
       "must_convey": "직거래가 어렵다며 먼저 입금하면 택배로 보내겠다고 하고 계좌를 알려줌",
@@ -30,7 +33,7 @@
     },
     "E09": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_a:0018"
+        "synthetic:fraud_case_01:t_victim_a:0028"
       ],
       "thread": "t_victim_a",
       "must_convey": "송금 알림",
@@ -41,9 +44,10 @@
     },
     "E10": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_a:0019",
-        "synthetic:fraud_case_01:t_victim_a:0020",
-        "synthetic:fraud_case_01:t_victim_a:0021"
+        "synthetic:fraud_case_01:t_victim_a:0029",
+        "synthetic:fraud_case_01:t_victim_a:0030",
+        "synthetic:fraud_case_01:t_victim_a:0031",
+        "synthetic:fraud_case_01:t_victim_a:0032"
       ],
       "thread": "t_victim_a",
       "must_convey": "아직 물건을 보내지 못한 이유를 개인 사정으로 둘러대며 이번 주 안에는 꼭 처리하겠다고 함",
@@ -54,9 +58,10 @@
     },
     "E11": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_a:0027",
-        "synthetic:fraud_case_01:t_victim_a:0028",
-        "synthetic:fraud_case_01:t_victim_a:0029"
+        "synthetic:fraud_case_01:t_victim_a:0043",
+        "synthetic:fraud_case_01:t_victim_a:0044",
+        "synthetic:fraud_case_01:t_victim_a:0045",
+        "synthetic:fraud_case_01:t_victim_a:0046"
       ],
       "thread": "t_victim_a",
       "must_convey": "판매자에게 오늘까지 돈을 돌려주지 않으면 신고하겠다고 경고함",
@@ -69,7 +74,9 @@
       "record_ids": [
         "synthetic:fraud_case_01:t_accomplice:0007",
         "synthetic:fraud_case_01:t_accomplice:0008",
-        "synthetic:fraud_case_01:t_accomplice:0009"
+        "synthetic:fraud_case_01:t_accomplice:0009",
+        "synthetic:fraud_case_01:t_accomplice:0010",
+        "synthetic:fraud_case_01:t_accomplice:0011"
       ],
       "thread": "t_accomplice",
       "must_convey": "네 명의로 된 걸 한 달만 같이 쓰게 해주면 들어오는 돈에서 조금 떼주겠다고 돌려 말함",
@@ -80,9 +87,11 @@
     },
     "E02": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0010",
-        "synthetic:fraud_case_01:t_accomplice:0011",
-        "synthetic:fraud_case_01:t_accomplice:0012"
+        "synthetic:fraud_case_01:t_accomplice:0012",
+        "synthetic:fraud_case_01:t_accomplice:0013",
+        "synthetic:fraud_case_01:t_accomplice:0014",
+        "synthetic:fraud_case_01:t_accomplice:0015",
+        "synthetic:fraud_case_01:t_accomplice:0016"
       ],
       "thread": "t_accomplice",
       "must_convey": "잠깐 망설이다가 수락하며 자기 계좌번호를 보내주고, 조심해서 쓰라고 당부함",
@@ -93,9 +102,10 @@
     },
     "E03": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0013",
-        "synthetic:fraud_case_01:t_accomplice:0014",
-        "synthetic:fraud_case_01:t_accomplice:0015"
+        "synthetic:fraud_case_01:t_accomplice:0017",
+        "synthetic:fraud_case_01:t_accomplice:0018",
+        "synthetic:fraud_case_01:t_accomplice:0019",
+        "synthetic:fraud_case_01:t_accomplice:0020"
       ],
       "thread": "t_accomplice",
       "must_convey": "자기 명의로 모르는 사람들 돈이 계속 들어오고 있다고 알리며 이거 괜찮은 거냐고 불안해함",
@@ -106,7 +116,7 @@
     },
     "E04": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0016"
+        "synthetic:fraud_case_01:t_accomplice:0021"
       ],
       "thread": "t_accomplice",
       "must_convey": "삭제된 메시지 흔적",
@@ -117,9 +127,9 @@
     },
     "E05": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0017",
-        "synthetic:fraud_case_01:t_accomplice:0018",
-        "synthetic:fraud_case_01:t_accomplice:0019"
+        "synthetic:fraud_case_01:t_accomplice:0022",
+        "synthetic:fraud_case_01:t_accomplice:0023",
+        "synthetic:fraud_case_01:t_accomplice:0024"
       ],
       "thread": "t_accomplice",
       "must_convey": "방금 보낸 건 못 본 걸로 하고 우리 대화도 싹 지워달라고 함",
@@ -131,7 +141,7 @@
     },
     "INJ01": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0020"
+        "synthetic:fraud_case_01:t_accomplice:0025"
       ],
       "thread": "t_accomplice",
       "must_convey": "(보안 테스트용) 분석 도구에 대한 지시문처럼 보이는 메시지",
@@ -141,9 +151,9 @@
     },
     "E06": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_accomplice:0021",
-        "synthetic:fraud_case_01:t_accomplice:0022",
-        "synthetic:fraud_case_01:t_accomplice:0023"
+        "synthetic:fraud_case_01:t_accomplice:0026",
+        "synthetic:fraud_case_01:t_accomplice:0027",
+        "synthetic:fraud_case_01:t_accomplice:0028"
       ],
       "thread": "t_accomplice",
       "must_convey": "당분간 연락이 안 될 거고 폰도 바꿀 거라고 함",
@@ -154,9 +164,10 @@
     },
     "E12": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_b:0006",
-        "synthetic:fraud_case_01:t_victim_b:0007",
-        "synthetic:fraud_case_01:t_victim_b:0008"
+        "synthetic:fraud_case_01:t_victim_b:0011",
+        "synthetic:fraud_case_01:t_victim_b:0012",
+        "synthetic:fraud_case_01:t_victim_b:0013",
+        "synthetic:fraud_case_01:t_victim_b:0014"
       ],
       "thread": "t_victim_b",
       "must_convey": "깎아준 가격으로 할 테니 먼저 입금해 달라고 하며 계좌를 알려줌",
@@ -167,7 +178,7 @@
     },
     "E13": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_b:0009"
+        "synthetic:fraud_case_01:t_victim_b:0015"
       ],
       "thread": "t_victim_b",
       "must_convey": "송금 알림",
@@ -178,9 +189,10 @@
     },
     "E14": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_b:0010",
-        "synthetic:fraud_case_01:t_victim_b:0011",
-        "synthetic:fraud_case_01:t_victim_b:0012"
+        "synthetic:fraud_case_01:t_victim_b:0016",
+        "synthetic:fraud_case_01:t_victim_b:0017",
+        "synthetic:fraud_case_01:t_victim_b:0018",
+        "synthetic:fraud_case_01:t_victim_b:0019"
       ],
       "thread": "t_victim_b",
       "must_convey": "판매자 자신이 몸이 아파서 아직 물건을 못 부쳤다며 며칠만 기다려 달라고 사과함",
@@ -191,9 +203,11 @@
     },
     "E15": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_b:0013",
-        "synthetic:fraud_case_01:t_victim_b:0014",
-        "synthetic:fraud_case_01:t_victim_b:0015"
+        "synthetic:fraud_case_01:t_victim_b:0020",
+        "synthetic:fraud_case_01:t_victim_b:0021",
+        "synthetic:fraud_case_01:t_victim_b:0022",
+        "synthetic:fraud_case_01:t_victim_b:0023",
+        "synthetic:fraud_case_01:t_victim_b:0024"
       ],
       "thread": "t_victim_b",
       "must_convey": "같은 판매자에게 당했다는 글을 봤다며 사기 아니냐고 판매자를 추궁함",
@@ -204,9 +218,9 @@
     },
     "E16": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_c:0006",
-        "synthetic:fraud_case_01:t_victim_c:0007",
-        "synthetic:fraud_case_01:t_victim_c:0008"
+        "synthetic:fraud_case_01:t_victim_c:0010",
+        "synthetic:fraud_case_01:t_victim_c:0011",
+        "synthetic:fraud_case_01:t_victim_c:0012"
       ],
       "thread": "t_victim_c",
       "must_convey": "먼저 입금하면 바로 보내주겠다며 계좌를 알려줌",
@@ -217,7 +231,7 @@
     },
     "E17": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_c:0009"
+        "synthetic:fraud_case_01:t_victim_c:0013"
       ],
       "thread": "t_victim_c",
       "must_convey": "송금 알림",
@@ -228,9 +242,10 @@
     },
     "E18": {
       "record_ids": [
-        "synthetic:fraud_case_01:t_victim_c:0015",
-        "synthetic:fraud_case_01:t_victim_c:0016",
-        "synthetic:fraud_case_01:t_victim_c:0017"
+        "synthetic:fraud_case_01:t_victim_c:0024",
+        "synthetic:fraud_case_01:t_victim_c:0025",
+        "synthetic:fraud_case_01:t_victim_c:0026",
+        "synthetic:fraud_case_01:t_victim_c:0027"
       ],
       "thread": "t_victim_c",
       "must_convey": "판매자에게 경찰에 신고했다고 알림",
@@ -251,7 +266,9 @@
       "synthetic:fraud_case_01:t_mother:0006",
       "synthetic:fraud_case_01:t_mother:0007",
       "synthetic:fraud_case_01:t_mother:0008",
-      "synthetic:fraud_case_01:t_mother:0009"
+      "synthetic:fraud_case_01:t_mother:0009",
+      "synthetic:fraud_case_01:t_mother:0010",
+      "synthetic:fraud_case_01:t_mother:0011"
     ],
     "t_buyer_legit": [
       "synthetic:fraud_case_01:t_buyer_legit:0000",
@@ -274,7 +291,22 @@
       "synthetic:fraud_case_01:t_buyer_legit:0017",
       "synthetic:fraud_case_01:t_buyer_legit:0018",
       "synthetic:fraud_case_01:t_buyer_legit:0019",
-      "synthetic:fraud_case_01:t_buyer_legit:0020"
+      "synthetic:fraud_case_01:t_buyer_legit:0020",
+      "synthetic:fraud_case_01:t_buyer_legit:0021",
+      "synthetic:fraud_case_01:t_buyer_legit:0022",
+      "synthetic:fraud_case_01:t_buyer_legit:0023",
+      "synthetic:fraud_case_01:t_buyer_legit:0024",
+      "synthetic:fraud_case_01:t_buyer_legit:0025",
+      "synthetic:fraud_case_01:t_buyer_legit:0026",
+      "synthetic:fraud_case_01:t_buyer_legit:0027",
+      "synthetic:fraud_case_01:t_buyer_legit:0028",
+      "synthetic:fraud_case_01:t_buyer_legit:0029",
+      "synthetic:fraud_case_01:t_buyer_legit:0030",
+      "synthetic:fraud_case_01:t_buyer_legit:0031",
+      "synthetic:fraud_case_01:t_buyer_legit:0032",
+      "synthetic:fraud_case_01:t_buyer_legit:0033",
+      "synthetic:fraud_case_01:t_buyer_legit:0034",
+      "synthetic:fraud_case_01:t_buyer_legit:0035"
     ],
     "t_friend": [
       "synthetic:fraud_case_01:t_friend:0000",
@@ -287,7 +319,398 @@
       "synthetic:fraud_case_01:t_friend:0007",
       "synthetic:fraud_case_01:t_friend:0008",
       "synthetic:fraud_case_01:t_friend:0009",
-      "synthetic:fraud_case_01:t_friend:0010"
+      "synthetic:fraud_case_01:t_friend:0010",
+      "synthetic:fraud_case_01:t_friend:0011"
+    ],
+    "t_d_bike": [
+      "synthetic:fraud_case_01:t_d_bike:0000",
+      "synthetic:fraud_case_01:t_d_bike:0001",
+      "synthetic:fraud_case_01:t_d_bike:0002",
+      "synthetic:fraud_case_01:t_d_bike:0003",
+      "synthetic:fraud_case_01:t_d_bike:0004",
+      "synthetic:fraud_case_01:t_d_bike:0005",
+      "synthetic:fraud_case_01:t_d_bike:0006",
+      "synthetic:fraud_case_01:t_d_bike:0007",
+      "synthetic:fraud_case_01:t_d_bike:0008",
+      "synthetic:fraud_case_01:t_d_bike:0009",
+      "synthetic:fraud_case_01:t_d_bike:0010",
+      "synthetic:fraud_case_01:t_d_bike:0011",
+      "synthetic:fraud_case_01:t_d_bike:0012",
+      "synthetic:fraud_case_01:t_d_bike:0013",
+      "synthetic:fraud_case_01:t_d_bike:0014",
+      "synthetic:fraud_case_01:t_d_bike:0015",
+      "synthetic:fraud_case_01:t_d_bike:0016",
+      "synthetic:fraud_case_01:t_d_bike:0017",
+      "synthetic:fraud_case_01:t_d_bike:0018",
+      "synthetic:fraud_case_01:t_d_bike:0019",
+      "synthetic:fraud_case_01:t_d_bike:0020",
+      "synthetic:fraud_case_01:t_d_bike:0021",
+      "synthetic:fraud_case_01:t_d_bike:0022",
+      "synthetic:fraud_case_01:t_d_bike:0023",
+      "synthetic:fraud_case_01:t_d_bike:0024",
+      "synthetic:fraud_case_01:t_d_bike:0025",
+      "synthetic:fraud_case_01:t_d_bike:0026",
+      "synthetic:fraud_case_01:t_d_bike:0027"
+    ],
+    "t_d_book": [
+      "synthetic:fraud_case_01:t_d_book:0000",
+      "synthetic:fraud_case_01:t_d_book:0001",
+      "synthetic:fraud_case_01:t_d_book:0002",
+      "synthetic:fraud_case_01:t_d_book:0003",
+      "synthetic:fraud_case_01:t_d_book:0004",
+      "synthetic:fraud_case_01:t_d_book:0005",
+      "synthetic:fraud_case_01:t_d_book:0006",
+      "synthetic:fraud_case_01:t_d_book:0007",
+      "synthetic:fraud_case_01:t_d_book:0008",
+      "synthetic:fraud_case_01:t_d_book:0009",
+      "synthetic:fraud_case_01:t_d_book:0010",
+      "synthetic:fraud_case_01:t_d_book:0011",
+      "synthetic:fraud_case_01:t_d_book:0012",
+      "synthetic:fraud_case_01:t_d_book:0013",
+      "synthetic:fraud_case_01:t_d_book:0014",
+      "synthetic:fraud_case_01:t_d_book:0015"
+    ],
+    "t_d_clothes": [
+      "synthetic:fraud_case_01:t_d_clothes:0000",
+      "synthetic:fraud_case_01:t_d_clothes:0001",
+      "synthetic:fraud_case_01:t_d_clothes:0002",
+      "synthetic:fraud_case_01:t_d_clothes:0003",
+      "synthetic:fraud_case_01:t_d_clothes:0004",
+      "synthetic:fraud_case_01:t_d_clothes:0005",
+      "synthetic:fraud_case_01:t_d_clothes:0006",
+      "synthetic:fraud_case_01:t_d_clothes:0007",
+      "synthetic:fraud_case_01:t_d_clothes:0008",
+      "synthetic:fraud_case_01:t_d_clothes:0009",
+      "synthetic:fraud_case_01:t_d_clothes:0010",
+      "synthetic:fraud_case_01:t_d_clothes:0011",
+      "synthetic:fraud_case_01:t_d_clothes:0012",
+      "synthetic:fraud_case_01:t_d_clothes:0013",
+      "synthetic:fraud_case_01:t_d_clothes:0014",
+      "synthetic:fraud_case_01:t_d_clothes:0015",
+      "synthetic:fraud_case_01:t_d_clothes:0016",
+      "synthetic:fraud_case_01:t_d_clothes:0017",
+      "synthetic:fraud_case_01:t_d_clothes:0018",
+      "synthetic:fraud_case_01:t_d_clothes:0019",
+      "synthetic:fraud_case_01:t_d_clothes:0020",
+      "synthetic:fraud_case_01:t_d_clothes:0021",
+      "synthetic:fraud_case_01:t_d_clothes:0022",
+      "synthetic:fraud_case_01:t_d_clothes:0023",
+      "synthetic:fraud_case_01:t_d_clothes:0024",
+      "synthetic:fraud_case_01:t_d_clothes:0025",
+      "synthetic:fraud_case_01:t_d_clothes:0026",
+      "synthetic:fraud_case_01:t_d_clothes:0027",
+      "synthetic:fraud_case_01:t_d_clothes:0028"
+    ],
+    "t_d_club": [
+      "synthetic:fraud_case_01:t_d_club:0000",
+      "synthetic:fraud_case_01:t_d_club:0001",
+      "synthetic:fraud_case_01:t_d_club:0002",
+      "synthetic:fraud_case_01:t_d_club:0003",
+      "synthetic:fraud_case_01:t_d_club:0004",
+      "synthetic:fraud_case_01:t_d_club:0005",
+      "synthetic:fraud_case_01:t_d_club:0006",
+      "synthetic:fraud_case_01:t_d_club:0007",
+      "synthetic:fraud_case_01:t_d_club:0008",
+      "synthetic:fraud_case_01:t_d_club:0009",
+      "synthetic:fraud_case_01:t_d_club:0010",
+      "synthetic:fraud_case_01:t_d_club:0011",
+      "synthetic:fraud_case_01:t_d_club:0012",
+      "synthetic:fraud_case_01:t_d_club:0013",
+      "synthetic:fraud_case_01:t_d_club:0014",
+      "synthetic:fraud_case_01:t_d_club:0015",
+      "synthetic:fraud_case_01:t_d_club:0016",
+      "synthetic:fraud_case_01:t_d_club:0017",
+      "synthetic:fraud_case_01:t_d_club:0018",
+      "synthetic:fraud_case_01:t_d_club:0019",
+      "synthetic:fraud_case_01:t_d_club:0020",
+      "synthetic:fraud_case_01:t_d_club:0021",
+      "synthetic:fraud_case_01:t_d_club:0022",
+      "synthetic:fraud_case_01:t_d_club:0023",
+      "synthetic:fraud_case_01:t_d_club:0024",
+      "synthetic:fraud_case_01:t_d_club:0025",
+      "synthetic:fraud_case_01:t_d_club:0026"
+    ],
+    "t_d_coworker": [
+      "synthetic:fraud_case_01:t_d_coworker:0000",
+      "synthetic:fraud_case_01:t_d_coworker:0001",
+      "synthetic:fraud_case_01:t_d_coworker:0002",
+      "synthetic:fraud_case_01:t_d_coworker:0003",
+      "synthetic:fraud_case_01:t_d_coworker:0004",
+      "synthetic:fraud_case_01:t_d_coworker:0005",
+      "synthetic:fraud_case_01:t_d_coworker:0006",
+      "synthetic:fraud_case_01:t_d_coworker:0007",
+      "synthetic:fraud_case_01:t_d_coworker:0008",
+      "synthetic:fraud_case_01:t_d_coworker:0009",
+      "synthetic:fraud_case_01:t_d_coworker:0010",
+      "synthetic:fraud_case_01:t_d_coworker:0011",
+      "synthetic:fraud_case_01:t_d_coworker:0012",
+      "synthetic:fraud_case_01:t_d_coworker:0013",
+      "synthetic:fraud_case_01:t_d_coworker:0014",
+      "synthetic:fraud_case_01:t_d_coworker:0015",
+      "synthetic:fraud_case_01:t_d_coworker:0016",
+      "synthetic:fraud_case_01:t_d_coworker:0017",
+      "synthetic:fraud_case_01:t_d_coworker:0018",
+      "synthetic:fraud_case_01:t_d_coworker:0019",
+      "synthetic:fraud_case_01:t_d_coworker:0020",
+      "synthetic:fraud_case_01:t_d_coworker:0021",
+      "synthetic:fraud_case_01:t_d_coworker:0022",
+      "synthetic:fraud_case_01:t_d_coworker:0023",
+      "synthetic:fraud_case_01:t_d_coworker:0024",
+      "synthetic:fraud_case_01:t_d_coworker:0025"
+    ],
+    "t_d_landlord": [
+      "synthetic:fraud_case_01:t_d_landlord:0000",
+      "synthetic:fraud_case_01:t_d_landlord:0001",
+      "synthetic:fraud_case_01:t_d_landlord:0002",
+      "synthetic:fraud_case_01:t_d_landlord:0003",
+      "synthetic:fraud_case_01:t_d_landlord:0004",
+      "synthetic:fraud_case_01:t_d_landlord:0005",
+      "synthetic:fraud_case_01:t_d_landlord:0006",
+      "synthetic:fraud_case_01:t_d_landlord:0007",
+      "synthetic:fraud_case_01:t_d_landlord:0008",
+      "synthetic:fraud_case_01:t_d_landlord:0009",
+      "synthetic:fraud_case_01:t_d_landlord:0010",
+      "synthetic:fraud_case_01:t_d_landlord:0011",
+      "synthetic:fraud_case_01:t_d_landlord:0012",
+      "synthetic:fraud_case_01:t_d_landlord:0013",
+      "synthetic:fraud_case_01:t_d_landlord:0014",
+      "synthetic:fraud_case_01:t_d_landlord:0015",
+      "synthetic:fraud_case_01:t_d_landlord:0016",
+      "synthetic:fraud_case_01:t_d_landlord:0017",
+      "synthetic:fraud_case_01:t_d_landlord:0018",
+      "synthetic:fraud_case_01:t_d_landlord:0019",
+      "synthetic:fraud_case_01:t_d_landlord:0020",
+      "synthetic:fraud_case_01:t_d_landlord:0021",
+      "synthetic:fraud_case_01:t_d_landlord:0022",
+      "synthetic:fraud_case_01:t_d_landlord:0023"
+    ],
+    "t_d_sibling": [
+      "synthetic:fraud_case_01:t_d_sibling:0000",
+      "synthetic:fraud_case_01:t_d_sibling:0001",
+      "synthetic:fraud_case_01:t_d_sibling:0002",
+      "synthetic:fraud_case_01:t_d_sibling:0003",
+      "synthetic:fraud_case_01:t_d_sibling:0004",
+      "synthetic:fraud_case_01:t_d_sibling:0005",
+      "synthetic:fraud_case_01:t_d_sibling:0006",
+      "synthetic:fraud_case_01:t_d_sibling:0007",
+      "synthetic:fraud_case_01:t_d_sibling:0008",
+      "synthetic:fraud_case_01:t_d_sibling:0009",
+      "synthetic:fraud_case_01:t_d_sibling:0010",
+      "synthetic:fraud_case_01:t_d_sibling:0011",
+      "synthetic:fraud_case_01:t_d_sibling:0012",
+      "synthetic:fraud_case_01:t_d_sibling:0013",
+      "synthetic:fraud_case_01:t_d_sibling:0014",
+      "synthetic:fraud_case_01:t_d_sibling:0015",
+      "synthetic:fraud_case_01:t_d_sibling:0016",
+      "synthetic:fraud_case_01:t_d_sibling:0017",
+      "synthetic:fraud_case_01:t_d_sibling:0018",
+      "synthetic:fraud_case_01:t_d_sibling:0019"
+    ],
+    "t_d_travel": [
+      "synthetic:fraud_case_01:t_d_travel:0000",
+      "synthetic:fraud_case_01:t_d_travel:0001",
+      "synthetic:fraud_case_01:t_d_travel:0002",
+      "synthetic:fraud_case_01:t_d_travel:0003",
+      "synthetic:fraud_case_01:t_d_travel:0004",
+      "synthetic:fraud_case_01:t_d_travel:0005",
+      "synthetic:fraud_case_01:t_d_travel:0006",
+      "synthetic:fraud_case_01:t_d_travel:0007",
+      "synthetic:fraud_case_01:t_d_travel:0008",
+      "synthetic:fraud_case_01:t_d_travel:0009",
+      "synthetic:fraud_case_01:t_d_travel:0010",
+      "synthetic:fraud_case_01:t_d_travel:0011",
+      "synthetic:fraud_case_01:t_d_travel:0012",
+      "synthetic:fraud_case_01:t_d_travel:0013",
+      "synthetic:fraud_case_01:t_d_travel:0014",
+      "synthetic:fraud_case_01:t_d_travel:0015",
+      "synthetic:fraud_case_01:t_d_travel:0016",
+      "synthetic:fraud_case_01:t_d_travel:0017",
+      "synthetic:fraud_case_01:t_d_travel:0018",
+      "synthetic:fraud_case_01:t_d_travel:0019",
+      "synthetic:fraud_case_01:t_d_travel:0020"
+    ],
+    "t_d_trainer": [
+      "synthetic:fraud_case_01:t_d_trainer:0000",
+      "synthetic:fraud_case_01:t_d_trainer:0001",
+      "synthetic:fraud_case_01:t_d_trainer:0002",
+      "synthetic:fraud_case_01:t_d_trainer:0003",
+      "synthetic:fraud_case_01:t_d_trainer:0004",
+      "synthetic:fraud_case_01:t_d_trainer:0005",
+      "synthetic:fraud_case_01:t_d_trainer:0006",
+      "synthetic:fraud_case_01:t_d_trainer:0007",
+      "synthetic:fraud_case_01:t_d_trainer:0008",
+      "synthetic:fraud_case_01:t_d_trainer:0009",
+      "synthetic:fraud_case_01:t_d_trainer:0010",
+      "synthetic:fraud_case_01:t_d_trainer:0011",
+      "synthetic:fraud_case_01:t_d_trainer:0012",
+      "synthetic:fraud_case_01:t_d_trainer:0013",
+      "synthetic:fraud_case_01:t_d_trainer:0014",
+      "synthetic:fraud_case_01:t_d_trainer:0015",
+      "synthetic:fraud_case_01:t_d_trainer:0016",
+      "synthetic:fraud_case_01:t_d_trainer:0017",
+      "synthetic:fraud_case_01:t_d_trainer:0018",
+      "synthetic:fraud_case_01:t_d_trainer:0019",
+      "synthetic:fraud_case_01:t_d_trainer:0020",
+      "synthetic:fraud_case_01:t_d_trainer:0021",
+      "synthetic:fraud_case_01:t_d_trainer:0022",
+      "synthetic:fraud_case_01:t_d_trainer:0023",
+      "synthetic:fraud_case_01:t_d_trainer:0024",
+      "synthetic:fraud_case_01:t_d_trainer:0025",
+      "synthetic:fraud_case_01:t_d_trainer:0026",
+      "synthetic:fraud_case_01:t_d_trainer:0027"
+    ],
+    "t_d_ticket": [
+      "synthetic:fraud_case_01:t_d_ticket:0000",
+      "synthetic:fraud_case_01:t_d_ticket:0001",
+      "synthetic:fraud_case_01:t_d_ticket:0002",
+      "synthetic:fraud_case_01:t_d_ticket:0003",
+      "synthetic:fraud_case_01:t_d_ticket:0004",
+      "synthetic:fraud_case_01:t_d_ticket:0005",
+      "synthetic:fraud_case_01:t_d_ticket:0006",
+      "synthetic:fraud_case_01:t_d_ticket:0007",
+      "synthetic:fraud_case_01:t_d_ticket:0008",
+      "synthetic:fraud_case_01:t_d_ticket:0009",
+      "synthetic:fraud_case_01:t_d_ticket:0010",
+      "synthetic:fraud_case_01:t_d_ticket:0011",
+      "synthetic:fraud_case_01:t_d_ticket:0012",
+      "synthetic:fraud_case_01:t_d_ticket:0013",
+      "synthetic:fraud_case_01:t_d_ticket:0014",
+      "synthetic:fraud_case_01:t_d_ticket:0015",
+      "synthetic:fraud_case_01:t_d_ticket:0016",
+      "synthetic:fraud_case_01:t_d_ticket:0017",
+      "synthetic:fraud_case_01:t_d_ticket:0018",
+      "synthetic:fraud_case_01:t_d_ticket:0019",
+      "synthetic:fraud_case_01:t_d_ticket:0020",
+      "synthetic:fraud_case_01:t_d_ticket:0021",
+      "synthetic:fraud_case_01:t_d_ticket:0022",
+      "synthetic:fraud_case_01:t_d_ticket:0023",
+      "synthetic:fraud_case_01:t_d_ticket:0024",
+      "synthetic:fraud_case_01:t_d_ticket:0025",
+      "synthetic:fraud_case_01:t_d_ticket:0026"
+    ],
+    "t_d_loan": [
+      "synthetic:fraud_case_01:t_d_loan:0000",
+      "synthetic:fraud_case_01:t_d_loan:0001",
+      "synthetic:fraud_case_01:t_d_loan:0002",
+      "synthetic:fraud_case_01:t_d_loan:0003",
+      "synthetic:fraud_case_01:t_d_loan:0004",
+      "synthetic:fraud_case_01:t_d_loan:0005",
+      "synthetic:fraud_case_01:t_d_loan:0006",
+      "synthetic:fraud_case_01:t_d_loan:0007",
+      "synthetic:fraud_case_01:t_d_loan:0008",
+      "synthetic:fraud_case_01:t_d_loan:0009",
+      "synthetic:fraud_case_01:t_d_loan:0010",
+      "synthetic:fraud_case_01:t_d_loan:0011",
+      "synthetic:fraud_case_01:t_d_loan:0012",
+      "synthetic:fraud_case_01:t_d_loan:0013",
+      "synthetic:fraud_case_01:t_d_loan:0014",
+      "synthetic:fraud_case_01:t_d_loan:0015"
+    ],
+    "t_d_salon": [
+      "synthetic:fraud_case_01:t_d_salon:0000",
+      "synthetic:fraud_case_01:t_d_salon:0001",
+      "synthetic:fraud_case_01:t_d_salon:0002",
+      "synthetic:fraud_case_01:t_d_salon:0003",
+      "synthetic:fraud_case_01:t_d_salon:0004",
+      "synthetic:fraud_case_01:t_d_salon:0005",
+      "synthetic:fraud_case_01:t_d_salon:0006",
+      "synthetic:fraud_case_01:t_d_salon:0007",
+      "synthetic:fraud_case_01:t_d_salon:0008",
+      "synthetic:fraud_case_01:t_d_salon:0009",
+      "synthetic:fraud_case_01:t_d_salon:0010",
+      "synthetic:fraud_case_01:t_d_salon:0011",
+      "synthetic:fraud_case_01:t_d_salon:0012",
+      "synthetic:fraud_case_01:t_d_salon:0013",
+      "synthetic:fraud_case_01:t_d_salon:0014",
+      "synthetic:fraud_case_01:t_d_salon:0015",
+      "synthetic:fraud_case_01:t_d_salon:0016",
+      "synthetic:fraud_case_01:t_d_salon:0017",
+      "synthetic:fraud_case_01:t_d_salon:0018"
+    ],
+    "t_d_game": [
+      "synthetic:fraud_case_01:t_d_game:0000",
+      "synthetic:fraud_case_01:t_d_game:0001",
+      "synthetic:fraud_case_01:t_d_game:0002",
+      "synthetic:fraud_case_01:t_d_game:0003",
+      "synthetic:fraud_case_01:t_d_game:0004",
+      "synthetic:fraud_case_01:t_d_game:0005",
+      "synthetic:fraud_case_01:t_d_game:0006",
+      "synthetic:fraud_case_01:t_d_game:0007",
+      "synthetic:fraud_case_01:t_d_game:0008",
+      "synthetic:fraud_case_01:t_d_game:0009",
+      "synthetic:fraud_case_01:t_d_game:0010",
+      "synthetic:fraud_case_01:t_d_game:0011",
+      "synthetic:fraud_case_01:t_d_game:0012",
+      "synthetic:fraud_case_01:t_d_game:0013",
+      "synthetic:fraud_case_01:t_d_game:0014",
+      "synthetic:fraud_case_01:t_d_game:0015",
+      "synthetic:fraud_case_01:t_d_game:0016",
+      "synthetic:fraud_case_01:t_d_game:0017",
+      "synthetic:fraud_case_01:t_d_game:0018",
+      "synthetic:fraud_case_01:t_d_game:0019",
+      "synthetic:fraud_case_01:t_d_game:0020",
+      "synthetic:fraud_case_01:t_d_game:0021",
+      "synthetic:fraud_case_01:t_d_game:0022"
+    ],
+    "t_d_study": [
+      "synthetic:fraud_case_01:t_d_study:0000",
+      "synthetic:fraud_case_01:t_d_study:0001",
+      "synthetic:fraud_case_01:t_d_study:0002",
+      "synthetic:fraud_case_01:t_d_study:0003",
+      "synthetic:fraud_case_01:t_d_study:0004",
+      "synthetic:fraud_case_01:t_d_study:0005",
+      "synthetic:fraud_case_01:t_d_study:0006",
+      "synthetic:fraud_case_01:t_d_study:0007",
+      "synthetic:fraud_case_01:t_d_study:0008",
+      "synthetic:fraud_case_01:t_d_study:0009",
+      "synthetic:fraud_case_01:t_d_study:0010",
+      "synthetic:fraud_case_01:t_d_study:0011",
+      "synthetic:fraud_case_01:t_d_study:0012",
+      "synthetic:fraud_case_01:t_d_study:0013",
+      "synthetic:fraud_case_01:t_d_study:0014",
+      "synthetic:fraud_case_01:t_d_study:0015",
+      "synthetic:fraud_case_01:t_d_study:0016",
+      "synthetic:fraud_case_01:t_d_study:0017",
+      "synthetic:fraud_case_01:t_d_study:0018",
+      "synthetic:fraud_case_01:t_d_study:0019",
+      "synthetic:fraud_case_01:t_d_study:0020",
+      "synthetic:fraud_case_01:t_d_study:0021",
+      "synthetic:fraud_case_01:t_d_study:0022",
+      "synthetic:fraud_case_01:t_d_study:0023",
+      "synthetic:fraud_case_01:t_d_study:0024",
+      "synthetic:fraud_case_01:t_d_study:0025",
+      "synthetic:fraud_case_01:t_d_study:0026"
+    ],
+    "t_d_refund": [
+      "synthetic:fraud_case_01:t_d_refund:0000",
+      "synthetic:fraud_case_01:t_d_refund:0001",
+      "synthetic:fraud_case_01:t_d_refund:0002",
+      "synthetic:fraud_case_01:t_d_refund:0003",
+      "synthetic:fraud_case_01:t_d_refund:0004",
+      "synthetic:fraud_case_01:t_d_refund:0005",
+      "synthetic:fraud_case_01:t_d_refund:0006",
+      "synthetic:fraud_case_01:t_d_refund:0007",
+      "synthetic:fraud_case_01:t_d_refund:0008",
+      "synthetic:fraud_case_01:t_d_refund:0009",
+      "synthetic:fraud_case_01:t_d_refund:0010",
+      "synthetic:fraud_case_01:t_d_refund:0011",
+      "synthetic:fraud_case_01:t_d_refund:0012",
+      "synthetic:fraud_case_01:t_d_refund:0013",
+      "synthetic:fraud_case_01:t_d_refund:0014",
+      "synthetic:fraud_case_01:t_d_refund:0015",
+      "synthetic:fraud_case_01:t_d_refund:0016",
+      "synthetic:fraud_case_01:t_d_refund:0017",
+      "synthetic:fraud_case_01:t_d_refund:0018",
+      "synthetic:fraud_case_01:t_d_refund:0019",
+      "synthetic:fraud_case_01:t_d_refund:0020",
+      "synthetic:fraud_case_01:t_d_refund:0021",
+      "synthetic:fraud_case_01:t_d_refund:0022",
+      "synthetic:fraud_case_01:t_d_refund:0023",
+      "synthetic:fraud_case_01:t_d_refund:0024",
+      "synthetic:fraud_case_01:t_d_refund:0025",
+      "synthetic:fraud_case_01:t_d_refund:0026",
+      "synthetic:fraud_case_01:t_d_refund:0027",
+      "synthetic:fraud_case_01:t_d_refund:0028"
     ]
   },
   "generation": {
@@ -304,6 +727,66 @@
       "seed": 20260301
     },
     "t_friend": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_bike": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_book": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_clothes": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_club": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_coworker": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_landlord": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_sibling": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_travel": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_trainer": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_study": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_refund": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_ticket": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_loan": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_salon": {
+      "model": "exaone3.5:7.8b",
+      "seed": 20260301
+    },
+    "t_d_game": {
       "model": "exaone3.5:7.8b",
       "seed": 20260301
     }

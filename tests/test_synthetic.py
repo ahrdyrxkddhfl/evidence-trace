@@ -427,6 +427,11 @@ AVOID_BEAT = Beat(0, "say", datetime(2026, 3, 1, 21, 52, tzinfo=KST), ("suspect"
         ("hurry up 빨리요", "영어 단어"),
         ("₩150만원이에요", "통화 기호"),
         ("성춘향님 감사해요", "이름 노출"),
+        ("#@금융# 123-456-7890-0123 입니다", "가려지지 않은 번호"),
+        ("010 1234 5678로 연락주세요", "가려지지 않은 번호"),
+        ("1002345678901 여기요", "가려지지 않은 번호"),
+        ("○○카페 괜찮던데", "자리표시 기호"),
+        ("OO역 앞에서 봐요", "자리표시 기호"),
     ],
 )
 def test_validator_catches_review_findings(text: str, keyword: str) -> None:
@@ -707,3 +712,10 @@ def test_message_count_is_bounded_in_schema(scenario_path: Path, pool: FewShotPo
     say_items = model.schemas[1]["properties"]["messages"]
     assert (chat_items["minItems"], chat_items["maxItems"]) == (2, 3)
     assert (say_items["minItems"], say_items["maxItems"]) == (1, 3)
+
+
+@pytest.mark.parametrize("text", ["2~3일 걸려요", "배터리 98%구요", "5만원이요", "오후 2시 14:20", "3월 15일 10시"])
+def test_ordinary_numbers_are_allowed(text: str) -> None:
+    """금액·날짜·시각 같은 평범한 숫자는 번호 규칙에 걸리지 않는다."""
+    beat = Beat(0, "chat", datetime(2026, 3, 3, 10, 0, tzinfo=KST), ("a",), "x", (1, 2))
+    assert validate_messages([{"speaker": "나", "text": text}], beat, {"나"}, set()) == []

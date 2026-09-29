@@ -100,3 +100,99 @@
 {"thread": "t_friend", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
 {"thread": "t_friend", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0}
 {"action": "renormalize", "changed": 1}
+{"thread": "t_d_bike", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 7, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 9}
+{"thread": "t_d_bike", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_bike", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_bike", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_book", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 5: 알 수 없는 표시 #@사진#", "메시지 8: 통화 기호 사용", "메시지 9: 통화 기호 사용", "#@금융# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 11}
+{"thread": "t_d_book", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 4, "jamo_fixed": 0, "punct_trimmed": 0}
+{"thread": "t_d_book", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_book", "beat": 2, "attempt": 1, "ok": false, "problems": ["메시지 수 5개 (허용 2~4)"], "seed": 20260301, "split": 0, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 0}
+{"thread": "t_d_book", "beat": 2, "attempt": 2, "ok": false, "problems": ["#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 2}
+{"thread": "t_d_book", "beat": 2, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_book", "beat": 3, "attempt": 1, "ok": false, "problems": ["메시지 5: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 2, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_book", "beat": 3, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 0}
+{"thread": "t_d_clothes", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 6, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 10}
+{"thread": "t_d_clothes", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_clothes", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_clothes", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_club", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 1: 통화 기호 사용", "메시지 2: 통화 기호 사용", "메시지 4: 영어 단어 'okay'"], "seed": 20260301, "split": 3, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 10}
+{"thread": "t_d_club", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 1: 43자 (최대 40자)", "메시지 1: 통화 기호 사용"], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 6}
+{"thread": "t_d_club", "beat": 0, "attempt": 3, "ok": false, "problems": ["메시지 1: 통화 기호 사용", "메시지 2: 통화 기호 사용"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_club", "beat": 0, "attempt": 4, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 9}
+{"thread": "t_d_club", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_club", "beat": 2, "attempt": 1, "ok": false, "problems": ["메시지 1: 시스템 표시 사용 #@시스템#송금#"], "seed": 20260301, "split": 1, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 2}
+{"thread": "t_d_club", "beat": 2, "attempt": 2, "ok": false, "problems": ["메시지 1: 시스템 표시 사용 #@시스템#송금#"], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 2}
+{"thread": "t_d_club", "beat": 2, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_club", "beat": 3, "attempt": 1, "ok": false, "problems": ["메시지 3: 형식이 잘못된 '#' 표시", "메시지 9: 형식이 잘못된 '#' 표시", "메시지 11: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_club", "beat": 3, "attempt": 2, "ok": false, "problems": ["#@주소# 3회 반복 (장면당 1회)"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 6}
+{"thread": "t_d_club", "beat": 3, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_coworker", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 4: 영어 단어 'Perfect'"], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 1, "punct_trimmed": 6}
+{"thread": "t_d_coworker", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 0}
+{"thread": "t_d_coworker", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_coworker", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_landlord", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 1: 알 수 없는 표시 #@금액#"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 6}
+{"thread": "t_d_landlord", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 7: 알 수 없는 표시 #@집주인#"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_landlord", "beat": 0, "attempt": 3, "ok": false, "problems": ["#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 8}
+{"thread": "t_d_landlord", "beat": 0, "attempt": 4, "ok": false, "problems": ["메시지 1: 형식이 잘못된 '#' 표시", "메시지 3: 형식이 잘못된 '#' 표시", "메시지 5: 형식이 잘못된 '#' 표시", "메시지 7: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_landlord", "beat": 0, "attempt": 5, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 10}
+{"thread": "t_d_landlord", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_landlord", "beat": 2, "attempt": 1, "ok": false, "problems": ["메시지 3: 영어 단어 'Thursday'"], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_landlord", "beat": 2, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 11}
+{"thread": "t_d_sibling", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 1, "jamo_fixed": 1, "punct_trimmed": 6}
+{"thread": "t_d_sibling", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_sibling", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_sibling", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 2, "jamo_fixed": 1, "punct_trimmed": 1}
+{"thread": "t_d_travel", "beat": 0, "attempt": 1, "ok": false, "problems": ["#@URL# 2회 반복 (장면당 1회)", "#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 2, "punct_trimmed": 2}
+{"thread": "t_d_travel", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_travel", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 1, "punct_trimmed": 1}
+{"thread": "t_d_travel", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_travel", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 1, "punct_trimmed": 0}
+{"thread": "t_d_trainer", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 9}
+{"thread": "t_d_trainer", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 8}
+{"thread": "t_d_trainer", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_trainer", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_study", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_study", "beat": 1, "attempt": 1, "ok": false, "problems": ["메시지 9: 영어 단어 'thx'"], "seed": 20260301, "split": 5, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_study", "beat": 1, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_study", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_refund", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 2: 알 수 없는 표시 #@사진#", "메시지 12: 알 수 없는 표시 #@웹사이트#", "#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 6, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 9}
+{"thread": "t_d_refund", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 2: 알 수 없는 표시 #@사진#", "메시지 10: 43자 (최대 40자)", "#@금융# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 6, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 11}
+{"thread": "t_d_refund", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 6, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 16}
+{"thread": "t_d_refund", "beat": 1, "attempt": 1, "ok": false, "problems": ["#@금융# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_refund", "beat": 1, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_refund", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_refund", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_ticket", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 1: 영어 단어 'seats'"], "seed": 20260301, "split": 6, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_ticket", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 3: 통화 기호 사용"], "seed": 20260301, "split": 3, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_ticket", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 5, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 7}
+{"thread": "t_d_ticket", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_ticket", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 6}
+{"thread": "t_d_ticket", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 2}
+{"thread": "t_d_loan", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 1: 45자 (최대 40자)", "메시지 2: 영어 단어 'yeah'"], "seed": 20260301, "split": 1, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_loan", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_loan", "beat": 1, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_loan", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_loan", "beat": 3, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_salon", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 3: 알 수 없는 표시 #@시간#", "메시지 5: 알 수 없는 표시 #@시간#", "메시지 6: 알 수 없는 표시 #@시간#", "메시지 9: 알 수 없는 표시 #@감사#"], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_salon", "beat": 0, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_salon", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 2}
+{"thread": "t_d_salon", "beat": 2, "attempt": 1, "ok": false, "problems": ["#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_salon", "beat": 2, "attempt": 2, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_game", "beat": 0, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 2, "jamo_fixed": 1, "punct_trimmed": 0}
+{"thread": "t_d_game", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 1}
+{"thread": "t_d_game", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 3, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_study", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 6: 형식이 잘못된 '#' 표시", "메시지 7: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 4, "emoji_removed": 1, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_study", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 11: 형식이 잘못된 '#' 표시"], "seed": 20260301, "split": 4, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_study", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_study", "beat": 1, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 6, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 11}
+{"thread": "t_d_study", "beat": 2, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 0, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 3}
+{"thread": "t_d_refund", "beat": 0, "attempt": 1, "ok": false, "problems": ["메시지 2: 알 수 없는 표시 #@사진#", "메시지 12: 알 수 없는 표시 #@웹사이트#", "#@번호# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 6, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 9}
+{"thread": "t_d_refund", "beat": 0, "attempt": 2, "ok": false, "problems": ["메시지 2: 알 수 없는 표시 #@사진#", "메시지 10: 43자 (최대 40자)", "#@금융# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 6, "emoji_removed": 2, "jamo_fixed": 0, "punct_trimmed": 11}
+{"thread": "t_d_refund", "beat": 0, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 6, "emoji_removed": 3, "jamo_fixed": 0, "punct_trimmed": 16}
+{"thread": "t_d_refund", "beat": 1, "attempt": 1, "ok": false, "problems": ["#@금융# 2회 반복 (장면당 1회)"], "seed": 20260301, "split": 1, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 4}
+{"thread": "t_d_refund", "beat": 1, "attempt": 2, "ok": false, "problems": ["메시지 3: 가려지지 않은 번호 '123-456-7890-0123'"], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_refund", "beat": 1, "attempt": 3, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"thread": "t_d_refund", "beat": 2, "attempt": 0, "ok": true, "problems": [], "literal": true, "seed": 20260301}
+{"thread": "t_d_refund", "beat": 3, "attempt": 1, "ok": true, "problems": [], "seed": 20260301, "split": 2, "emoji_removed": 0, "jamo_fixed": 0, "punct_trimmed": 5}
+{"action": "renormalize", "changed": 85, "split": 57, "records_before": 490, "records_after": 549}

@@ -662,7 +662,7 @@ threads:
         at: 2026-03-05T22:40
         messages: 5-7
         opener: classmate
-        intent: 스터디원2가 이번 주 공부 범위와 모임 장소를 정하자고 하고 둘이 카페로 정함
+        intent: 스터디원2가 이번 주 공부 범위를 정하자고 하고, 모임 장소는 늘 가던 역 앞 카페로 하자고 해서 둘이 토요일 3시로 정함
       - type: chat
         at: 2026-03-19T23:00
         messages: 4-6

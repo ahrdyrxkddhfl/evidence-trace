@@ -100,6 +100,8 @@ ONCE_PER_BEAT_MARKERS = frozenset({"#@금융#", "#@전번#", "#@주소#", "#@번
 _MARKER = re.compile(r"#@[^#\s]+#(?:[^#\s]+#)?")
 _LATIN_WORD = re.compile(r"[A-Za-z]{3,}")
 _UNNATURAL_SYMBOLS = re.compile("[₩$€]")
+_RAW_NUMBER = re.compile(r"\d{2,}(?:[-\s]\d{2,}){2,}|\d{8,}")
+_PLACEHOLDER = re.compile(r"[○◯△□●■]|(?<![A-Za-z])OO(?![A-Za-z])")
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
 _EMOJI_JOINERS = re.compile("[\uFE0F\u200D]")
 
@@ -1066,6 +1068,10 @@ def validate_messages(
             problems.append(f"{where}: 영어 단어 {_LATIN_WORD.search(bare).group()!r}")
         if _UNNATURAL_SYMBOLS.search(bare):
             problems.append(f"{where}: 통화 기호 사용")
+        if _RAW_NUMBER.search(bare):
+            problems.append(f"{where}: 가려지지 않은 번호 {_RAW_NUMBER.search(bare).group()!r}")
+        if _PLACEHOLDER.search(bare):
+            problems.append(f"{where}: 자리표시 기호 {_PLACEHOLDER.search(bare).group()!r}")
         for name in forbidden_names:
             if name in bare:
                 problems.append(f"{where}: 가려야 할 이름 노출 {name!r}")
